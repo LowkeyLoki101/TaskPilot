@@ -1,20 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
 import MindMap from "@/components/MindMap";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
 import VoiceModal from "@/components/VoiceModal";
-import { AIControlPanel } from "@/components/AIControlPanel";
+import { ChatPane } from "@/components/ChatPane";
+import { InspectorPane } from "@/components/InspectorPane";
+import { QuickCaptureButton } from "@/components/QuickCaptureButton";
+import { MobileNav } from "@/components/MobileNav";
+import { StepRunner } from "@/components/StepRunner";
+import { CommandPalette } from "@/components/CommandPalette";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useVoice } from "@/hooks/useVoice";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Brain, Sparkles } from "lucide-react";
+import { useMobile } from "@/hooks/use-mobile";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User } from "lucide-react";
 
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState<'mindmap' | 'list' | 'calendar'>('mindmap');
+  const [mobileTab, setMobileTab] = useState<'today' | 'inbox' | 'projects'>('today');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  const [isStepRunnerOpen, setIsStepRunnerOpen] = useState(false);
   const [currentProjectId] = useState("default-project");
+  
+  const isMobile = useMobile();
 
   const { 
     isListening, 
@@ -25,6 +39,70 @@ export default function Dashboard() {
   } = useVoice();
 
   useWebSocket(currentProjectId);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Command palette (Cmd/Ctrl + K)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(true);
+      }
+      
+      // Escape to close modals
+      if (e.key === 'Escape') {
+        setIsCommandPaletteOpen(false);
+        setIsStepRunnerOpen(false);
+        setIsVoiceModalOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Mock data for demonstration
+  const todayTasks = [
+    {
+      id: "task-1",
+      title: "Review design mockups",
+      status: "todo" as const,
+      priority: "high" as const,
+      dueDate: new Date().toISOString(),
+      assignee: "You",
+      tags: ["design", "review"],
+      steps: [
+        { id: "step-1", title: "Open Figma file", completed: false, actionType: "link" as const, actionData: { url: "https://figma.com" } },
+        { id: "step-2", title: "Review layout designs", completed: false },
+        { id: "step-3", title: "Provide feedback", completed: false, actionType: "email" as const, actionData: { email: "designer@company.com", message: "Feedback on mockups" } }
+      ]
+    },
+    {
+      id: "task-2", 
+      title: "Call client about project timeline",
+      status: "in-progress" as const,
+      priority: "medium" as const,
+      dueDate: new Date().toISOString(),
+      assignee: "You",
+      tags: ["client", "call"],
+      steps: [
+        { id: "step-4", title: "Prepare talking points", completed: true },
+        { id: "step-5", title: "Call client", completed: false, actionType: "call" as const, actionData: { phone: "+1234567890" } },
+        { id: "step-6", title: "Update project timeline", completed: false }
+      ]
+    }
+  ];
+
+  const inboxTasks = [
+    {
+      id: "task-3",
+      title: "Set up new project repository",
+      status: "todo" as const,
+      priority: "low" as const,
+      tags: ["setup", "git"],
+      steps: []
+    }
+  ];
 
   const handleVoiceToggle = () => {
     if (isListening) {
@@ -38,12 +116,214 @@ export default function Dashboard() {
 
   const handleTaskSelect = (taskId: string) => {
     setSelectedTaskId(taskId);
+    if (isMobile) {
+      setIsStepRunnerOpen(true);
+    }
   };
 
   const handleCloseTaskPanel = () => {
     setSelectedTaskId(null);
   };
 
+  const handleTaskComplete = (taskId: string) => {
+    console.log("Task completed:", taskId);
+    setIsStepRunnerOpen(false);
+    setSelectedTaskId(null);
+  };
+
+  const handleStepComplete = (taskId: string, stepId: string) => {
+    console.log("Step completed:", taskId, stepId);
+  };
+
+  const handleTaskCreate = (task: { title: string; tags: string[]; priority: string }) => {
+    console.log("Creating task:", task);
+    // TODO: Implement task creation
+  };
+
+  const handleCommand = (commandId: string) => {
+    console.log("Executing command:", commandId);
+    // TODO: Implement command actions
+    switch (commandId) {
+      case "go-today":
+        setMobileTab("today");
+        break;
+      case "go-inbox":
+        setMobileTab("inbox");
+        break;
+      case "go-projects":
+        setMobileTab("projects");
+        break;
+      // Add more command handlers
+    }
+  };
+
+  const getCurrentTasks = () => {
+    switch (mobileTab) {
+      case "today": return todayTasks;
+      case "inbox": return inboxTasks;
+      case "projects": return [];
+      default: return [];
+    }
+  };
+
+  const selectedTask = todayTasks.concat(inboxTasks).find(task => task.id === selectedTaskId) || null;
+
+  // Responsive layout based on screen size
+  if (isMobile) {
+    return (
+      <div className="h-screen bg-background text-foreground font-inter">
+        <Header 
+          onVoiceToggle={handleVoiceToggle}
+          isVoiceActive={isListening}
+        />
+        
+        {/* Mobile Content */}
+        <div className="h-[calc(100vh-4rem-4rem)] overflow-hidden">
+          {mobileTab === 'today' && (
+            <div className="h-full flex flex-col">
+              {/* Header */}
+              <div className="p-4 border-b border-border">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold">Today</h2>
+                    <p className="text-sm text-muted-foreground">{todayTasks.length} tasks</p>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    {new Date().toLocaleDateString()}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Task List */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-3">
+                  {todayTasks.map((task) => (
+                    <Card 
+                      key={task.id}
+                      className="cursor-pointer hover:bg-accent/50 transition-colors"
+                      onClick={() => handleTaskSelect(task.id)}
+                      data-testid={`task-card-${task.id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="space-y-2">
+                          <div className="flex items-start justify-between">
+                            <h3 className="font-medium text-sm leading-tight">{task.title}</h3>
+                            <Badge 
+                              variant={task.priority === "high" ? "destructive" : "outline"}
+                              className="text-xs ml-2 shrink-0"
+                            >
+                              {task.priority}
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <CheckCircle className="h-3 w-3" />
+                              <span>{task.steps.filter(s => s.completed).length}/{task.steps.length}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span>Due today</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <User className="h-3 w-3" />
+                              <span>{task.assignee}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap gap-1">
+                            {task.tags.map((tag) => (
+                              <Badge key={tag} variant="outline" className="text-xs">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+
+          {mobileTab === 'inbox' && (
+            <div className="h-full flex flex-col">
+              <div className="p-4 border-b border-border">
+                <h2 className="text-lg font-semibold">Inbox</h2>
+                <p className="text-sm text-muted-foreground">{inboxTasks.length} new tasks</p>
+              </div>
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-3">
+                  {inboxTasks.map((task) => (
+                    <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskSelect(task.id)}>
+                      <CardContent className="p-4">
+                        <h3 className="font-medium text-sm">{task.title}</h3>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {task.tags.map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+
+          {mobileTab === 'projects' && (
+            <div className="h-full flex flex-col">
+              <div className="p-4 border-b border-border">
+                <h2 className="text-lg font-semibold">Projects</h2>
+              </div>
+              <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                <div className="text-center">
+                  <Brain className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">Projects view coming soon</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Navigation */}
+        <MobileNav 
+          currentTab={mobileTab}
+          onTabChange={setMobileTab}
+          todayCount={todayTasks.length}
+          inboxCount={inboxTasks.length}
+        />
+
+        {/* Quick Capture Button */}
+        <QuickCaptureButton onTaskCreate={handleTaskCreate} />
+
+        {/* Step Runner */}
+        <StepRunner
+          task={selectedTask}
+          isOpen={isStepRunnerOpen}
+          onClose={() => setIsStepRunnerOpen(false)}
+          onStepComplete={handleStepComplete}
+          onTaskComplete={handleTaskComplete}
+        />
+
+        {/* Voice Modal */}
+        {isVoiceModalOpen && (
+          <VoiceModal
+            isListening={isListening}
+            transcript={transcript}
+            onClose={() => setIsVoiceModalOpen(false)}
+            onStop={stopListening}
+            onProcess={() => processVoiceCommand(transcript, currentProjectId)}
+          />
+        )}
+      </div>
+    );
+  }
+
+  // Desktop Layout - Three Pane System
   return (
     <div className="h-screen bg-background text-foreground font-inter">
       <Header 
@@ -51,14 +331,16 @@ export default function Dashboard() {
         isVoiceActive={isListening}
       />
       
-      <div className="flex h-[calc(100vh-4rem)]">
-        <Sidebar 
-          currentView={currentView}
-          onViewChange={setCurrentView}
+      {/* Desktop Three-Pane Layout */}
+      <div className="h-[calc(100vh-4rem)] grid grid-cols-1 md:grid-cols-[360px,1fr] lg:grid-cols-[360px,1fr,360px]">
+        {/* Left Pane - Chat (hidden on mobile, visible on md+) */}
+        <ChatPane 
           projectId={currentProjectId}
+          className="hidden md:flex"
         />
-        
-        <main className="flex-1 flex flex-col bg-background">
+
+        {/* Center Pane - Canvas */}
+        <div className="flex flex-col min-w-0 bg-background">
           {/* Toolbar */}
           <div className="bg-card border-b border-border p-4">
             <div className="flex justify-between items-center">
@@ -71,132 +353,78 @@ export default function Dashboard() {
               </div>
 
               <div className="flex items-center space-x-3">
-                {/* Search */}
-                <div className="relative">
-                  <input 
-                    type="text" 
-                    placeholder="Search tasks..." 
-                    className="bg-input border border-border rounded-lg pl-10 pr-4 py-2 text-foreground placeholder-muted-foreground w-64 focus:outline-none focus:ring-2 focus:ring-primary"
-                    data-testid="input-search-tasks"
-                  />
-                  <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground"></i>
-                </div>
-
-                {/* Actions */}
-                <button 
-                  className="bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors duration-200"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCommandPaletteOpen(true)}
+                  className="hidden lg:flex"
+                >
+                  <span className="text-xs">⌘K</span>
+                </Button>
+                
+                <Button 
+                  className="bg-primary hover:bg-primary/90"
                   data-testid="button-add-task"
                 >
-                  <i className="fas fa-plus mr-2"></i>Add Task
-                </button>
-                
-                <button 
-                  className="bg-muted hover:bg-accent text-foreground p-2 rounded-lg transition-colors duration-200"
-                  data-testid="button-share-project"
-                >
-                  <i className="fas fa-share-alt"></i>
-                </button>
+                  Add Task
+                </Button>
               </div>
             </div>
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1 flex overflow-hidden">
-            {/* Primary Content Area */}
-            <div className="flex-1 relative">
-              {currentView === 'mindmap' && (
-                <MindMap 
-                  projectId={currentProjectId}
-                  onTaskSelect={handleTaskSelect}
-                />
-              )}
-              {currentView === 'list' && (
-                <div className="p-8 text-center text-muted-foreground">
-                  <i className="fas fa-list text-4xl mb-4"></i>
-                  <p>List view coming soon...</p>
-                </div>
-              )}
-              {currentView === 'calendar' && (
-                <div className="p-8 text-center text-muted-foreground">
-                  <i className="fas fa-calendar text-4xl mb-4"></i>
-                  <p>Calendar view coming soon...</p>
-                </div>
-              )}
-            </div>
-
-            {/* AI Control Panel - Right Side */}
-            <div className="w-96 border-l border-border bg-card/50 overflow-y-auto">
-              <div className="p-4 border-b border-border bg-gradient-to-r from-primary/10 to-secondary/10">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary">
-                    <Brain className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">AI Assistant</h3>
-                    <p className="text-xs text-muted-foreground">Full website control enabled</p>
-                  </div>
-                  <Sparkles className="h-4 w-4 text-accent ml-auto animate-pulse" />
-                </div>
+          {/* Canvas Content */}
+          <div className="flex-1 relative overflow-hidden">
+            {currentView === 'mindmap' && (
+              <MindMap 
+                projectId={currentProjectId}
+                onTaskSelect={handleTaskSelect}
+              />
+            )}
+            {currentView === 'list' && (
+              <div className="p-8 text-center text-muted-foreground">
+                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>List view coming soon...</p>
               </div>
-              
-              <div className="p-4">
-                <AIControlPanel />
+            )}
+            {currentView === 'calendar' && (
+              <div className="p-8 text-center text-muted-foreground">
+                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Calendar view coming soon...</p>
               </div>
-              
-              {/* AI Capabilities Showcase */}
-              <div className="p-4 border-t border-border">
-                <Card className="bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-primary" />
-                      AI Capabilities
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Your AI assistant can control everything on this website
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="text-xs space-y-1">
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                        <span>Modify any UI element or layout</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-                        <span>Create, update, delete tasks & projects</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
-                        <span>Send emails & notifications</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <div className="w-1.5 h-1.5 rounded-full bg-orange-500"></div>
-                        <span>Search web & integrate results</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-500"></div>
-                        <span>Customize themes & preferences</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <div className="w-1.5 h-1.5 rounded-full bg-pink-500"></div>
-                        <span>Automate workflows & processes</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
+            )}
           </div>
-        </main>
+        </div>
 
-        {selectedTaskId && (
-          <TaskDetailPanel
-            taskId={selectedTaskId}
-            onClose={handleCloseTaskPanel}
-          />
-        )}
+        {/* Right Pane - Inspector (hidden on mobile and md, visible on lg+) */}
+        <InspectorPane 
+          selectedTaskId={selectedTaskId}
+          className="hidden lg:flex"
+        />
+
+        {/* Sidebar for view switching */}
+        <Sidebar 
+          currentView={currentView}
+          onViewChange={setCurrentView}
+          projectId={currentProjectId}
+        />
       </div>
 
+      {/* Command Palette */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onCommand={handleCommand}
+      />
+
+      {/* Task Detail Panel (for selected tasks on desktop) */}
+      {selectedTaskId && !isMobile && (
+        <TaskDetailPanel
+          taskId={selectedTaskId}
+          onClose={handleCloseTaskPanel}
+        />
+      )}
+
+      {/* Voice Modal */}
       {isVoiceModalOpen && (
         <VoiceModal
           isListening={isListening}

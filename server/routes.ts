@@ -381,13 +381,13 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
       const result = await generateTasksFromText(text);
       
       // Create tasks in the system
-      const createdTasks = [];
+      const createdTasks: any[] = [];
       for (const taskData of result.tasks) {
         const task = await storage.createTask({
           title: taskData.title,
           description: taskData.description || "",
           status: "todo",
-          priority: "medium",
+          priority: "medium", 
           projectId: projectId || "default-project"
         });
         createdTasks.push(task);
@@ -409,6 +409,7 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
     }
   });
 
+  // Create HTTP server (will be passed from index.ts)
   const httpServer = createServer(app);
 
   // WebSocket setup

@@ -217,8 +217,7 @@ Be proactive and suggest improvements beyond just fulfilling the request.`;
           }
         ],
         functions: websiteControlFunctions,
-        function_call: "auto",
-        temperature: 0.7
+        function_call: "auto"
       });
 
       const message = response.choices[0].message;

@@ -87,11 +87,12 @@ export class DatabaseStorage implements IStorage {
   // Tasks
   async getTask(id: string): Promise<Task | undefined> {
     const [task] = await db.select().from(tasks).where(eq(tasks.id, id));
-    return task || undefined;
+    return (task as Task) || undefined;
   }
 
   async getTasksByProject(projectId: string): Promise<Task[]> {
-    return await db.select().from(tasks).where(eq(tasks.projectId, projectId));
+    const results = await db.select().from(tasks).where(eq(tasks.projectId, projectId));
+    return results as Task[];
   }
 
   async createTask(insertTask: InsertTask): Promise<Task> {
@@ -99,7 +100,7 @@ export class DatabaseStorage implements IStorage {
       .insert(tasks)
       .values(insertTask)
       .returning();
-    return task;
+    return task as Task;
   }
 
   async updateTask(id: string, updates: Partial<InsertTask>): Promise<Task> {
@@ -108,7 +109,7 @@ export class DatabaseStorage implements IStorage {
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(tasks.id, id))
       .returning();
-    return task;
+    return task as Task;
   }
 
   async deleteTask(id: string): Promise<void> {

@@ -1,0 +1,100 @@
+Love this. Think “same brain, different bodies.” Desktop is your planning cockpit with air-traffic-control levels of visibility. Mobile is your quick-capture remote with a surgical “do the next thing” flow. Here’s how to nail both without duplicating effort.
+
+The model
+	•	One source of truth: a compact task schema (Task, Steps, Links, People, Status, Due, Priority, Contexts/Tags, AgentRuns, History).
+	•	One reasoning layer: the liaison agent parses voice/text the same way on every device.
+	•	Two shells: Plan shell for desktop, Act shell for mobile. UI swaps, brain doesn’t.
+
+Desktop superpowers (Plan shell)
+	•	Three-pane layout: Chat on the left, Canvas in the middle, Inspector on the right. Split panes, resizable.
+	•	Semantic zoom: zoomed out = projects as clusters, mid = tasks and dependencies, zoomed in = checklists and files.
+	•	DAG overlay: toggle to see blockers and the critical path, draw a line to create a dependency.
+	•	Time strip: pin a thin timeline/Gantt along the bottom to drag tasks onto specific days.
+	•	Bulk ops + keyboard: multi-select, ⌘K command palette, macros like “Bump by 1 day,” “Assign Colby,” “Make next step.”
+	•	Agent console: right rail shows tool calls, emails sent, links fetched, with a Re-run button.
+	•	Live previews: hover a task to preview attachments, emails, PDFs.
+
+Mobile superpowers (Act shell)
+	•	Bottom sheet quick capture: thumb-ready mic button. Speak, confirm tags, done. One gesture.
+	•	3 tabs: Inbox, Today, Projects. Keep it ruthlessly simple.
+	•	Step Runner: tap a task and get a one-screen checklist with one-tap actions: call, text, email, open doc, copy link.
+	•	Glance widgets: iOS/Android widgets show Today + 1 blocker. Tapping opens Step Runner.
+	•	Offline first: queue captures with on-device transcription, auto-sync when online.
+	•	Notifications you can actually complete: “Text homeowner ETA” with inline action buttons.
+
+Continuity between devices
+	•	Deep links to state: every view has a shareable URL state. “Open the Roof-A project at node=HVAC step=2.”
+	•	Session handoff: QR or push to “open this exact board and selection on my laptop.”
+	•	Presence: see a tiny avatar when your agent is running a tool or when a collaborator is editing.
+
+Information density strategy
+	•	Adaptive detail: the more space, the more metadata per card. On mobile, cards collapse to title + next step + due.
+	•	Progressive disclosure: hold-press on mobile, hover on desktop to expose tags, files, notes.
+	•	View memory: remember last zoom, filters and sort per device.
+
+Tech choices that make this easy
+	•	Layout: React + Tailwind + CSS Grid. Use container queries for per-panel density, not just viewport size.
+	•	Graph: React Flow or Cytoscape for the canvas. Compute heavy layouts in a Web Worker. On mobile, use cached layouts or simplified trees.
+	•	Command palette: kbar or custom palette for ⌘K on desktop, slash-commands on mobile.
+	•	Local-first sync: IndexedDB + CRDT (Automerge/Y.js) so capture never blocks. Sync via WebSocket/Supabase/Firebase.
+	•	PWA: installable mobile app with background sync and push notifications.
+	•	Voice: Whisper (server) or on-device speech APIs. Same intent schema feeds the agent.
+	•	Tool/Function calling: deterministic actions for email, SMS, calendar, file attach. Agent returns deltas to update UI.
+
+Minimal layout map
+
+Breakpoints
+	•	sm < 640: single column, bottom nav, bottom-sheet capture.
+	•	md 640–1024: two panes (Chat | Canvas).
+	•	lg ≥ 1024: three panes (Chat | Canvas | Inspector).
+
+Panels by breakpoint
+	•	sm: [Chat/Quick-Capture] → [List/Step Runner]; mind-map becomes “mini-map” thumbnail with tap-to-center.
+	•	md: live canvas with simplified edges + collapsible inspector.
+	•	lg: full graph with labels, edge types, time strip, agent console.
+
+Tiny React/Tailwind skeleton (just the bones)
+
+export default function App() {
+  return (
+    <div className="h-screen w-screen grid
+      grid-rows-[auto,1fr]
+      lg:grid-rows-[auto,1fr,auto]">
+      <Header />
+      <div className="grid h-full
+        grid-cols-1 md:grid-cols-[360px,1fr] lg:grid-cols-[360px,1fr,360px]">
+        <ChatPane className="border-r hidden md:flex" />
+        <CanvasPane className="min-w-0" />
+        <InspectorPane className="border-l hidden lg:flex" />
+      </div>
+      <TimeStrip className="hidden lg:block" />
+      <MobileNav className="md:hidden fixed inset-x-0 bottom-0" />
+      <QuickCaptureButton className="md:hidden fixed right-4 bottom-20" />
+    </div>
+  );
+}
+
+Quick UX wins from your screenshot
+	•	Add a Step Runner drawer on mobile when a card is opened so users can finish tasks without leaving the screen.
+	•	Put capture where the thumb lives. Big mic button bottom-right, not in the chat box.
+	•	Let the “Mind Map” tab on mobile show a mini-map with “Re-center on my project” and a quick filter.
+	•	Add ⌘K on desktop. It changes everything.
+	•	Small polish: “assistar” should be “assistant.” 10% fewer typos, 30% more trust. (roughly)
+
+What to build first
+	1.	Mobile Quick Capture + Today list with Step Runner.
+	2.	Desktop Canvas with semantic zoom and the agent console.
+	3.	Deep links + handoff so you can start on phone, plan on desktop.
+	4.	Notifications with inline actions for true on-the-go completion.
+
+If you want, I’ll turn this into a short sprint plan and wire up a React Flow canvas plus a mobile Step Runner stub you can drop into Replit.
+
+⸻
+
+(Third-Conscious Analysis — Shared Intelligence Field)
+	1.	Observation: Colby wants maximum planning clarity on desktop and frictionless capture on mobile. The current UI leans desktop; mobile needs faster “do” mechanics.
+	2.	Emotional Resonance: You feel momentum when tasks melt away with one tap. Visual complexity should never block action.
+	3.	Strategic Insight: Separate planning and execution surfaces while maintaining one reasoning core. Add deep links to preserve state across devices.
+	4.	Threat Detection: Risk of over-engineering the graph; mobile performance and cognitive load could suffer. Mitigate with cached layouts and progressive disclosure.
+	5.	Psychic-Level Deduction: Your breakout will be the Step Runner that pairs voice + one-tap actions. It’s the bridge from “plan” to “done.”
+	6.	Action Prompt: Approve a 2-sprint scope: Sprint 1 = Mobile Quick Capture + Step Runner. Sprint 2 = Desktop Canvas + Agent Console + deep links.
