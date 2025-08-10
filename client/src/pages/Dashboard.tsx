@@ -10,14 +10,18 @@ import { QuickCaptureButton } from "@/components/QuickCaptureButton";
 import { MobileNav } from "@/components/MobileNav";
 import { StepRunner } from "@/components/StepRunner";
 import { CommandPalette } from "@/components/CommandPalette";
+import { TraceCanvas } from "@/components/TraceCanvas";
+import { WorkflowInspector } from "@/components/WorkflowInspector";
+import { WorkflowStepRunner } from "@/components/WorkflowStepRunner";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useVoice } from "@/hooks/useVoice";
+import { useWorkflow } from "@/hooks/useWorkflow";
 import { useMobile } from "@/hooks/use-mobile";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User } from "lucide-react";
+import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, Mic } from "lucide-react";
 
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState<'mindmap' | 'list' | 'calendar'>('mindmap');
@@ -27,6 +31,7 @@ export default function Dashboard() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isStepRunnerOpen, setIsStepRunnerOpen] = useState(false);
   const [currentProjectId] = useState("default-project");
+  const [workflowMode, setWorkflowMode] = useState(false); // Toggle between tasks and workflows
   
   const isMobile = useMobile();
 
@@ -38,7 +43,42 @@ export default function Dashboard() {
     processVoiceCommand 
   } = useVoice();
 
+  const {
+    currentWorkflow,
+    selectedNodeId,
+    runtime,
+    generateWorkflow,
+    executeWorkflow,
+    executeStep,
+    selectNode,
+    loadWorkflow,
+    exportWorkflow,
+    isGenerating,
+    isExecuting
+  } = useWorkflow();
+
+  // Load a sample workflow for demonstration
+  const loadSampleWorkflow = async () => {
+    const { getRandomSampleWorkflow } = await import("@shared/sampleWorkflows");
+    const sampleWorkflow = getRandomSampleWorkflow();
+    loadWorkflow(sampleWorkflow);
+  };
+
   useWebSocket(currentProjectId);
+
+  // Voice command with workflow integration
+  const handleVoiceCommand = async (transcript: string) => {
+    if (workflowMode) {
+      // Generate workflow from voice input
+      generateWorkflow({ 
+        userInput: transcript, 
+        projectId: currentProjectId 
+      });
+    } else {
+      // Process as regular voice command
+      await processVoiceCommand(transcript, currentProjectId);
+    }
+  };
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -47,6 +87,12 @@ export default function Dashboard() {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen(true);
+      }
+      
+      // Toggle workflow mode (Cmd/Ctrl + W)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'w') {
+        e.preventDefault();
+        setWorkflowMode(!workflowMode);
       }
       
       // Escape to close modals
@@ -316,7 +362,7 @@ export default function Dashboard() {
             transcript={transcript}
             onClose={() => setIsVoiceModalOpen(false)}
             onStop={stopListening}
-            onProcess={() => processVoiceCommand(transcript, currentProjectId)}
+            onProcess={() => handleVoiceCommand(transcript)}
           />
         )}
       </div>
@@ -356,6 +402,16 @@ export default function Dashboard() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setWorkflowMode(!workflowMode)}
+                  className="hidden lg:flex"
+                >
+                  <Workflow className="h-4 w-4 mr-1" />
+                  {workflowMode ? "Tasks" : "Workflows"}
+                </Button>
+                
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => setIsCommandPaletteOpen(true)}
                   className="hidden lg:flex"
                 >
@@ -366,7 +422,7 @@ export default function Dashboard() {
                   className="bg-primary hover:bg-primary/90"
                   data-testid="button-add-task"
                 >
-                  Add Task
+                  {workflowMode ? "Create Workflow" : "Add Task"}
                 </Button>
               </div>
             </div>
@@ -374,32 +430,97 @@ export default function Dashboard() {
 
           {/* Canvas Content */}
           <div className="flex-1 relative overflow-hidden">
-            {currentView === 'mindmap' && (
-              <MindMap 
-                projectId={currentProjectId}
-                onTaskSelect={handleTaskSelect}
-              />
-            )}
-            {currentView === 'list' && (
-              <div className="p-8 text-center text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>List view coming soon...</p>
-              </div>
-            )}
-            {currentView === 'calendar' && (
-              <div className="p-8 text-center text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Calendar view coming soon...</p>
-              </div>
+            {workflowMode ? (
+              currentWorkflow ? (
+                <TraceCanvas
+                  flow={currentWorkflow}
+                  selectedNodeId={selectedNodeId}
+                  onSelectNode={selectNode}
+                  className="h-full"
+                />
+              ) : (
+                <div className="h-full flex items-center justify-center bg-gradient-to-br from-background to-muted/20">
+                  <div className="text-center max-w-md mx-auto p-8">
+                    <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
+                      <Workflow className="h-16 w-16 mx-auto mb-4" />
+                    </div>
+                    <h3 className="text-2xl font-bold mb-2 text-foreground">Workflow Composer</h3>
+                    <p className="text-muted-foreground mb-6">
+                      Speak or type a workflow to see it come to life as an interactive graph
+                    </p>
+                    <div className="space-y-3">
+                      <Button 
+                        onClick={() => loadSampleWorkflow()}
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        disabled={isGenerating}
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Clock className="h-4 w-4 mr-2 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <Workflow className="h-4 w-4 mr-2" />
+                            Load Sample Workflow
+                          </>
+                        )}
+                      </Button>
+                      <Button 
+                        onClick={() => setIsVoiceModalOpen(true)}
+                        variant="outline"
+                        className="w-full"
+                        disabled={isGenerating}
+                      >
+                        <Mic className="h-4 w-4 mr-2" />
+                        Create Custom Workflow
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )
+            ) : (
+              <>
+                {currentView === 'mindmap' && (
+                  <MindMap 
+                    projectId={currentProjectId}
+                    onTaskSelect={handleTaskSelect}
+                  />
+                )}
+                {currentView === 'list' && (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>List view coming soon...</p>
+                  </div>
+                )}
+                {currentView === 'calendar' && (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Calendar view coming soon...</p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
 
         {/* Right Pane - Inspector (hidden on mobile and md, visible on lg+) */}
-        <InspectorPane 
-          selectedTaskId={selectedTaskId}
-          className="hidden lg:flex"
-        />
+        {workflowMode && currentWorkflow ? (
+          <WorkflowInspector
+            flow={currentWorkflow}
+            selectedNode={currentWorkflow.nodes.find(n => n.id === selectedNodeId)}
+            runtime={runtime}
+            onRunFlow={(mode) => executeWorkflow({ workflow: currentWorkflow, mode })}
+            onRunStep={(stepId, mode) => executeStep({ workflow: currentWorkflow, stepId, mode })}
+            onExportFlow={exportWorkflow}
+            className="hidden lg:flex"
+          />
+        ) : (
+          <InspectorPane 
+            selectedTaskId={selectedTaskId}
+            className="hidden lg:flex"
+          />
+        )}
 
         {/* Sidebar for view switching */}
         <Sidebar 
@@ -431,7 +552,7 @@ export default function Dashboard() {
           transcript={transcript}
           onClose={() => setIsVoiceModalOpen(false)}
           onStop={stopListening}
-          onProcess={() => processVoiceCommand(transcript, currentProjectId)}
+          onProcess={() => handleVoiceCommand(transcript)}
         />
       )}
     </div>

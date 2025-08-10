@@ -12,14 +12,7 @@ import {
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { aiAssistant } from "./aiAssistant";
-import { 
-  generateTasksFromText, 
-  processVoiceCommand, 
-  processChatMessage, 
-  generateSubtasks,
-  analyzeTaskPriorities,
-  generateProjectSummary
-} from "./openai";
+// OpenAI functions will be imported as needed
 
 // Using GPT-5 - the newest OpenAI model released August 7, 2025 with unified reasoning and enhanced capabilities
 const openai = new OpenAI({ 
@@ -406,6 +399,118 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
     } catch (error) {
       console.error("Error generating tasks:", error);
       res.status(500).json({ error: "Failed to generate tasks" });
+    }
+  });
+
+  // Workflow routes - Conversational Workflow Composer
+  app.post("/api/workflows/generate", async (req, res) => {
+    try {
+      const { userInput, projectId } = req.body;
+      
+      if (!userInput) {
+        return res.status(400).json({ error: "User input is required" });
+      }
+
+      const { generateWorkflowFromSpeech } = await import("./aiWorkflowGenerator");
+      const workflow = await generateWorkflowFromSpeech(userInput, { projectId });
+      
+      res.json({ workflow });
+    } catch (error) {
+      console.error("Error generating workflow:", error);
+      res.status(500).json({ error: "Failed to generate workflow" });
+    }
+  });
+
+  app.post("/api/workflows/:id/execute", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { workflow, mode = "simulate" } = req.body;
+      
+      if (!workflow) {
+        return res.status(400).json({ error: "Workflow is required" });
+      }
+
+      const { workflowEngine } = await import("./workflowEngine");
+      const runtime = await workflowEngine.executeFlow(workflow, mode);
+      
+      res.json({ runtime });
+    } catch (error) {
+      console.error("Error executing workflow:", error);
+      res.status(500).json({ error: "Failed to execute workflow" });
+    }
+  });
+
+  app.post("/api/workflows/:id/step/:stepId", async (req, res) => {
+    try {
+      const { id, stepId } = req.params;
+      const { workflow, mode = "simulate" } = req.body;
+      
+      if (!workflow) {
+        return res.status(400).json({ error: "Workflow is required" });
+      }
+
+      const { workflowEngine } = await import("./workflowEngine");
+      const trace = await workflowEngine.executeStep(workflow, stepId);
+      
+      res.json({ trace });
+    } catch (error) {
+      console.error("Error executing step:", error);
+      res.status(500).json({ error: "Failed to execute step" });
+    }
+  });
+
+  app.get("/api/workflows/:id/runtime", async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      const { workflowEngine } = await import("./workflowEngine");
+      const runtime = workflowEngine.getRuntime(id);
+      
+      if (!runtime) {
+        return res.status(404).json({ error: "Runtime not found" });
+      }
+      
+      res.json({ runtime });
+    } catch (error) {
+      console.error("Error getting runtime:", error);
+      res.status(500).json({ error: "Failed to get runtime" });
+    }
+  });
+
+  app.post("/api/workflows/:id/refine", async (req, res) => {
+    try {
+      const { workflow, feedback } = req.body;
+      
+      if (!workflow || !feedback) {
+        return res.status(400).json({ error: "Workflow and feedback are required" });
+      }
+
+      const { refineWorkflow } = await import("./aiWorkflowGenerator");
+      const refinedWorkflow = await refineWorkflow(workflow, feedback);
+      
+      res.json({ workflow: refinedWorkflow });
+    } catch (error) {
+      console.error("Error refining workflow:", error);
+      res.status(500).json({ error: "Failed to refine workflow" });
+    }
+  });
+
+  app.post("/api/workflows/step/:stepId/explain", async (req, res) => {
+    try {
+      const { stepId } = req.params;
+      const { workflow, level = "user" } = req.body;
+      
+      if (!workflow) {
+        return res.status(400).json({ error: "Workflow is required" });
+      }
+
+      const { explainWorkflowStep } = await import("./aiWorkflowGenerator");
+      const explanation = await explainWorkflowStep(workflow, stepId, level);
+      
+      res.json({ explanation });
+    } catch (error) {
+      console.error("Error explaining step:", error);
+      res.status(500).json({ error: "Failed to explain step" });
     }
   });
 

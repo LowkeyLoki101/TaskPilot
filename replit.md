@@ -51,6 +51,8 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 - **Website Control**: AI can modify any UI element, create/manage tasks, send notifications, search web, customize themes
 - **Context Awareness**: Project-specific AI assistance with conversation history
 - **Proactive Suggestions**: Intelligent recommendations based on user behavior patterns
+- **Workflow Generation**: Natural language to FlowScript conversion with intelligent tool selection
+- **AI Workflow Engine**: Automated execution with error handling and step-by-step debugging
 
 ### Data Models
 - **Users**: Authentication and profile management
@@ -115,3 +117,15 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 - Real-time execution feedback and status indicators
 - One-click demonstration actions showcasing AI capabilities
 - Integrated seamlessly into dashboard layout with dedicated right panel
+
+### Conversational Workflow Composer (August 2025)
+- **COMPLETED**: Full dual-interface architecture with "same brain, different bodies" concept
+- **Voice-to-Workflow**: Natural language processing converts spoken commands to executable graphs
+- **FlowScript DSL**: Human-readable JSON format for workflow definition and validation
+- **Visual Designer**: React Flow-based TraceCanvas for desktop workflow visualization
+- **Mobile Execution**: Step-by-step WorkflowStepRunner for mobile workflow execution
+- **Tool Registry**: Comprehensive tool system supporting Dropbox, email, Slack, calendar integrations
+- **Sample Workflows**: Pre-built demonstrations for file analysis, customer support, social media automation
+- **Dual-Mode Dashboard**: Seamless switching between task management and workflow composer
+- **Inspector Panel**: Real-time workflow debugging, execution control, and export capabilities
+- **Aviation-Themed UI**: Three-pane layout optimized for both planning and execution workflows
