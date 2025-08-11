@@ -12,7 +12,55 @@ import {
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { aiAssistant } from "./aiAssistant";
-// OpenAI functions will be imported as needed
+import { generateWorkflowFromPrompt } from "./openai";
+
+// AI Voice Processing - Intelligent voice command handling
+async function processVoiceIntelligently(text: string) {
+  const prompt = `Analyze this voice input and determine the appropriate action:
+
+Voice Input: "${text}"
+
+Classify as one of:
+1. TASK_CREATE - User wants to create a task/todo item
+2. WORKFLOW_CREATE - User wants to create a workflow/process 
+3. QUESTION - User is asking a question
+4. COMMAND - User wants to execute an action
+
+For TASK_CREATE, extract:
+- title (clear, actionable task name)
+- tags (relevant categorization)
+- priority (low/medium/high/urgent based on urgency words)
+
+For WORKFLOW_CREATE, identify:
+- workflow type and steps
+- tools needed
+
+For QUESTION/COMMAND, provide appropriate response.
+
+Respond with JSON only:
+{
+  "action": "TASK_CREATE|WORKFLOW_CREATE|QUESTION|COMMAND",
+  "title": "extracted title",
+  "tags": ["tag1", "tag2"],
+  "priority": "medium",
+  "response": "response text if question",
+  "workflow_request": "workflow description if workflow"
+}`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user  
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.3
+    });
+
+    return JSON.parse(response.choices[0].message.content || "{}");
+  } catch (error) {
+    console.error("AI processing error:", error);
+    throw new Error("Failed to process voice input");
+  }
+}
 
 // Using GPT-5 - the newest OpenAI model released August 7, 2025 with unified reasoning and enhanced capabilities
 const openai = new OpenAI({ 
@@ -195,7 +243,7 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
         content: aiResponse.message,
         role: "assistant",
         projectId: req.params.projectId,
-        metadata: aiResponse.functions || null
+        metadata: aiResponse.functions ? JSON.stringify(aiResponse.functions) : null
       });
 
       // Broadcast to WebSocket clients
@@ -215,6 +263,95 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
     } catch (error) {
       console.error("Error processing chat message:", error);
       res.status(500).json({ error: "Failed to process chat message" });
+    }
+  });
+
+  // Voice Processing - AI-powered intelligent voice command handling
+  app.post("/api/voice/process", async (req, res) => {
+    try {
+      const { text } = req.body;
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: "Text input required" });
+      }
+
+      // Use AI to intelligently process the voice input
+      const aiAnalysis = await processVoiceIntelligently(text);
+      
+      let result: any = { action: aiAnalysis.action };
+
+      if (aiAnalysis.action === 'TASK_CREATE') {
+        // Auto-create task with AI-determined properties
+        const task = await storage.createTask({
+          title: aiAnalysis.title || text,
+          tags: aiAnalysis.tags || [],
+          priority: aiAnalysis.priority || 'medium',
+          projectId: 'default-project',
+          userId: 'mock-user-id',
+          completed: false
+        });
+        
+        result = {
+          action: 'task_created',
+          task: task,
+          message: `Task "${task.title}" created automatically with AI organization`
+        };
+        
+      } else if (aiAnalysis.action === 'WORKFLOW_CREATE') {
+        // Generate workflow using AI
+        try {
+          const workflowContent = await generateWorkflowFromPrompt(
+            aiAnalysis.workflow_request || text,
+            ['dropbox', 'email', 'slack', 'calendar', 'sms']
+          );
+          
+          result = {
+            action: 'workflow_created',
+            workflow: {
+              title: aiAnalysis.title || 'AI Generated Workflow',
+              content: workflowContent
+            },
+            message: `Workflow "${aiAnalysis.title}" created and ready to execute`
+          };
+        } catch (error) {
+          console.error("Workflow generation error:", error);
+          result = {
+            action: 'question_answered',
+            response: "I understand you want to create a workflow, but I need more specific details about the steps involved."
+          };
+        }
+        
+      } else if (aiAnalysis.action === 'QUESTION') {
+        result = {
+          action: 'question_answered',
+          response: aiAnalysis.response || "I'm here to help you manage tasks and workflows. What would you like to do?"
+        };
+        
+      } else {
+        // Default to task creation if unclear
+        const task = await storage.createTask({
+          title: text.substring(0, 100), // Limit title length
+          tags: ['voice-input'],
+          priority: 'medium',
+          projectId: 'default-project', 
+          userId: 'mock-user-id',
+          completed: false
+        });
+        
+        result = {
+          action: 'task_created',
+          task: task,
+          message: "Created task from your voice input"
+        };
+      }
+
+      res.json(result);
+    } catch (error) {
+      console.error("Voice processing error:", error);
+      res.status(500).json({ 
+        error: "Failed to process voice input",
+        action: 'error',
+        message: "Sorry, I couldn't understand that. Please try again."
+      });
     }
   });
 
@@ -318,89 +455,7 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
     }
   });
 
-  // Voice command processing
-  app.post("/api/voice/process", async (req, res) => {
-    try {
-      const { transcript, projectId } = req.body;
-      const response = await processVoiceCommand(transcript);
-      
-      // Create a chat message for the voice command
-      const userMessage = await storage.createChatMessage({
-        content: `🎤 Voice: ${transcript}`,
-        role: "user",
-        projectId: projectId || "default-project"
-      });
 
-      const assistantMessage = await storage.createChatMessage({
-        content: response.message,
-        role: "assistant", 
-        projectId: projectId || "default-project",
-        metadata: response.functions || null
-      });
-
-      // Broadcast both messages
-      broadcastToProject(projectId || "default-project", {
-        type: "chat_message",
-        data: userMessage
-      });
-      
-      broadcastToProject(projectId || "default-project", {
-        type: "chat_message", 
-        data: assistantMessage
-      });
-
-      // Execute function calls if any
-      if (response.functions) {
-        for (const func of response.functions) {
-          await executeFunctionCall(func, projectId || "default-project");
-        }
-      }
-
-      res.json({ 
-        userMessage, 
-        assistantMessage, 
-        functions: response.functions 
-      });
-    } catch (error) {
-      console.error("Error processing voice command:", error);
-      res.status(500).json({ error: "Failed to process voice command" });
-    }
-  });
-
-  // AI-powered task generation
-  app.post("/api/ai/generate-tasks", async (req, res) => {
-    try {
-      const { text, projectId } = req.body;
-      const result = await generateTasksFromText(text);
-      
-      // Create tasks in the system
-      const createdTasks: any[] = [];
-      for (const taskData of result.tasks) {
-        const task = await storage.createTask({
-          title: taskData.title,
-          description: taskData.description || "",
-          status: "todo",
-          priority: "medium", 
-          projectId: projectId || "default-project"
-        });
-        createdTasks.push(task);
-        
-        // Broadcast task creation
-        broadcastToProject(projectId || "default-project", {
-          type: "task_created",
-          data: task
-        });
-      }
-      
-      res.json({ 
-        message: result.message,
-        tasks: createdTasks
-      });
-    } catch (error) {
-      console.error("Error generating tasks:", error);
-      res.status(500).json({ error: "Failed to generate tasks" });
-    }
-  });
 
   // Workflow routes - Conversational Workflow Composer
   app.post("/api/workflows/generate", async (req, res) => {

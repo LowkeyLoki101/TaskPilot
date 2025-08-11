@@ -61,32 +61,68 @@ export function useVoice() {
     return recognition;
   }, [toast]);
 
-  // Process voice command mutation
+  // AI-powered voice processing mutation
   const processVoiceMutation = useMutation({
-    mutationFn: async ({ command, projectId }: { command: string; projectId: string }) => {
-      const response = await apiRequest("POST", `/api/projects/${projectId}/chat`, {
-        content: command
+    mutationFn: async ({ command }: { command: string }) => {
+      const response = await apiRequest("POST", "/api/voice/process", {
+        text: command
       });
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({
         queryKey: ["/api/projects"]
       });
-      toast({
-        title: "Voice Command Processed",
-        description: "Your voice command has been processed successfully"
-      });
+      
+      // Show AI-generated response
+      if (data.action === 'task_created') {
+        toast({
+          title: "✅ Task Created",
+          description: `"${data.task.title}" - AI organized and tagged automatically`
+        });
+      } else if (data.action === 'workflow_created') {
+        toast({
+          title: "🔄 Workflow Created", 
+          description: `"${data.workflow.title}" - Ready to execute`
+        });
+      } else if (data.action === 'question_answered') {
+        toast({
+          title: "💡 AI Response",
+          description: data.response
+        });
+      }
       setTranscript("");
     },
     onError: () => {
       toast({
-        title: "Error",
-        description: "Failed to process voice command",
+        title: "AI Processing Error",
+        description: "Could not understand your request. Try speaking more clearly.",
         variant: "destructive"
       });
     }
   });
+
+  // Auto-process speech when it ends
+  const autoProcessSpeech = useCallback((text: string) => {
+    if (text.trim().length > 5) { // Only process meaningful speech
+      processVoiceMutation.mutate({ command: text });
+    }
+  }, [processVoiceMutation]);
+
+  // Auto-process transcript when listening stops
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+    }
+    setIsListening(false);
+    
+    // Auto-process transcript after a short delay
+    if (transcript.trim().length > 5) {
+      setTimeout(() => {
+        autoProcessSpeech(transcript.trim());
+      }, 1000);
+    }
+  }, [transcript, autoProcessSpeech]);
 
   const startListening = useCallback(() => {
     if (!recognitionRef.current) {
@@ -99,16 +135,11 @@ export function useVoice() {
     }
   }, [setupRecognition]);
 
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-    setIsListening(false);
-  }, []);
 
-  const processVoiceCommand = useCallback((command: string, projectId: string) => {
+
+  const processVoiceCommand = useCallback((command: string) => {
     if (command.trim()) {
-      processVoiceMutation.mutate({ command: command.trim(), projectId });
+      processVoiceMutation.mutate({ command: command.trim() });
     }
   }, [processVoiceMutation]);
 

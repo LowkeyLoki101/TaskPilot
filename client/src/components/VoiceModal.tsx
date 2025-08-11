@@ -22,10 +22,12 @@ export default function VoiceModal({
               <i className="fas fa-microphone text-white text-3xl"></i>
             </div>
             <h3 className="text-xl font-semibold text-foreground mb-2">
-              {isListening ? 'Listening...' : 'Voice Input'}
+              {isListening ? 'Listening...' : transcript ? 'Processing...' : 'Voice Ready'}
             </h3>
             <p className="text-muted-foreground text-sm">
-              Speak naturally to create tasks or ask questions
+              {isListening ? 'Speak naturally - AI will auto-organize when you finish' : 
+               transcript ? 'AI is automatically processing and organizing your request' :
+               'Just speak - no clicks needed, AI handles everything'}
             </p>
           </div>
 
@@ -48,7 +50,12 @@ export default function VoiceModal({
           {/* Transcript */}
           <div className="bg-muted rounded-lg p-4 mb-6 min-h-16">
             <p className="text-foreground text-sm">
-              {transcript || "Start speaking..."}
+              {transcript ? (
+                <span>
+                  <span className="text-blue-600">📝</span> {transcript}
+                  {!isListening && <span className="text-green-600 ml-2">✨ AI processing...</span>}
+                </span>
+              ) : "Start speaking..."}
             </p>
           </div>
 
@@ -69,14 +76,17 @@ export default function VoiceModal({
               >
                 <i className="fas fa-stop mr-2"></i>Stop
               </button>
+            ) : transcript ? (
+              <div className="flex-1 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-4 py-2 rounded-lg font-medium text-center">
+                <i className="fas fa-sparkles mr-2"></i>Auto-Processing
+              </div>
             ) : (
               <button 
-                onClick={onProcess}
-                disabled={!transcript.trim()}
-                className="flex-1 bg-primary hover:bg-primary-600 text-primary-foreground px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50"
-                data-testid="button-voice-process"
+                onClick={onClose}
+                className="flex-1 bg-muted hover:bg-accent text-foreground px-4 py-2 rounded-lg font-medium transition-colors"
+                data-testid="button-voice-ready"
               >
-                <i className="fas fa-check mr-2"></i>Process
+                <i className="fas fa-microphone mr-2"></i>Start Speaking
               </button>
             )}
           </div>
