@@ -174,3 +174,12 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 - **REPLACED**: All placeholder Brain icons and temporary branding with authentic logo assets
 - **FINALIZED**: Professional header branding in both desktop Dashboard and mobile Header components  
 - **ACHIEVED**: Complete visual brand consistency across all user interfaces and touchpoints
+
+### Inspector-Centric AI Architecture (August 2025)
+- **ARCHITECTURAL OVERHAUL**: Moved chat functionality from separate left pane into Inspector's AI tab, creating unified "body of the AI"
+- **TWO-PANE LAYOUT**: Transformed from 3-pane (Chat | Workspace | Inspector) to 2-pane (Workspace | AI Inspector) design
+- **AI TAB INTEGRATION**: Combined chat interface with real-time AI activity feed in single cohesive AI experience  
+- **TAB RESTRUCTURE**: Reorganized to AI (chat + activity), Task (traditional todos), Feature (AI suggestions with approve/deny), Debug (diagnostics)
+- **WORKSPACE LIBERATION**: Freed up significant workspace area by consolidating AI functionality into unified right panel
+- **FEATURE REQUEST WORKFLOW**: Enhanced approve/deny/edit system with Replit agent integration for automatic implementation
+- **AUTHENTIC DATA FLOW**: Connected real AI activity logging system replacing mock data with genuine maintenance and system activities

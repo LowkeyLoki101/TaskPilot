@@ -6,7 +6,7 @@ import MindMap from "@/components/MindMap";
 import { WorkflowMindMap } from "@/components/WorkflowMindMap";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
 import VoiceModal from "@/components/VoiceModal";
-import { ChatPane } from "@/components/ChatPane";
+// ChatPane now integrated into InspectorPane
 import { InspectorPane } from "@/components/InspectorPane";
 import { FeatureRequestPanel } from "@/components/FeatureRequestPanel";
 import { DiagnosticsPanel } from "@/components/DiagnosticsPanel";
@@ -449,13 +449,8 @@ export default function Dashboard() {
         isVoiceActive={isListening}
       />
       
-      {/* Desktop Three-Pane Layout */}
-      <div className="h-[calc(100vh-4rem)] grid grid-cols-1 md:grid-cols-[300px,1fr] lg:grid-cols-[300px,1fr,300px]">
-        {/* Left Pane - Chat (hidden on mobile, visible on md+) */}
-        <ChatPane 
-          projectId={currentProjectId}
-          className="hidden md:flex"
-        />
+      {/* Desktop Two-Pane Layout - Workspace + Inspector */}
+      <div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[1fr,400px]">
 
         {/* Center Pane - Canvas */}
         <div className="flex flex-col min-w-0 bg-background">
@@ -754,6 +749,7 @@ export default function Dashboard() {
             aiActivityLog={aiActivityLog}
             lastMaintenanceRun={lastMaintenanceRun}
             onRunMaintenance={runMaintenanceCheck}
+            projectId={currentProjectId}
             className="hidden lg:flex"
           />
         )}

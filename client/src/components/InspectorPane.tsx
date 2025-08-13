@@ -26,6 +26,7 @@ import {
   Lightbulb
 } from "lucide-react";
 import { FeatureRequestPanel } from "./FeatureRequestPanel";
+import { ChatPane } from "./ChatPane";
 
 interface InspectorPaneProps {
   selectedTaskId?: string | null;
@@ -34,6 +35,7 @@ interface InspectorPaneProps {
   aiActivityLog?: Array<{id: string, action: string, timestamp: Date, type: 'task' | 'bug' | 'enhancement' | 'maintenance'}>;
   lastMaintenanceRun?: Date | null;
   onRunMaintenance?: () => void;
+  projectId: string;
   className?: string;
 }
 
@@ -44,6 +46,7 @@ export function InspectorPane({
   aiActivityLog = [],
   lastMaintenanceRun,
   onRunMaintenance,
+  projectId,
   className 
 }: InspectorPaneProps) {
   const [activeTab, setActiveTab] = useState("ai");
@@ -113,13 +116,13 @@ export function InspectorPane({
   return (
     <div className={`flex flex-col h-full bg-card border-l border-border ${className}`} data-testid="inspector-pane">
       <div className="p-4 border-b border-border">
-        <h3 className="font-semibold text-sm">Inspector</h3>
-        <p className="text-xs text-muted-foreground">Task details and AI controls</p>
+        <h3 className="font-semibold text-sm">AI Assistant</h3>
+        <p className="text-xs text-muted-foreground">Chat, tasks, features, and diagnostics</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <div className="px-4 pt-2">
-          <TabsList className="grid w-full grid-cols-5">
+        <div className="px-3 pt-2">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="ai" className="text-xs">
               <Brain className="h-3 w-3 mr-1" />
               AI
@@ -132,10 +135,6 @@ export function InspectorPane({
               <Lightbulb className="h-3 w-3 mr-1" />
               Feature
             </TabsTrigger>
-            <TabsTrigger value="activity" className="text-xs">
-              <Activity className="h-3 w-3 mr-1" />
-              Activity
-            </TabsTrigger>
             <TabsTrigger value="diagnostics" className="text-xs">
               <Bug className="h-3 w-3 mr-1" />
               Debug
@@ -144,8 +143,43 @@ export function InspectorPane({
         </div>
 
         <div className="flex-1 overflow-hidden">
-          <TabsContent value="ai" className="h-full mt-0 p-4">
-            <AIControlPanel />
+          <TabsContent value="ai" className="h-full mt-0 flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
+              {/* AI Chat Interface */}
+              <div className="flex-1 min-h-0">
+                <ChatPane 
+                  projectId={projectId}
+                  className="h-full border-none"
+                />
+              </div>
+              
+              {/* AI Activity Feed */}
+              <div className="border-t border-border bg-muted/20 p-3">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1 text-xs font-medium">
+                    <Activity className="h-3 w-3 text-primary" />
+                    Recent AI Activity
+                  </div>
+                  <div className="space-y-1 max-h-24 overflow-y-auto">
+                    {agentActivity.length > 0 ? agentActivity.slice(0, 3).map((activity, index) => (
+                      <div key={index} className="flex items-start gap-2 p-1 bg-background/50 rounded text-xs">
+                        <div className={`h-2 w-2 rounded-full mt-1 shrink-0 ${
+                          activity.type === 'maintenance' ? 'bg-blue-500' :
+                          activity.type === 'enhancement' ? 'bg-green-500' :
+                          activity.type === 'bug' ? 'bg-red-500' : 'bg-gray-500'
+                        }`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{activity.action}</p>
+                          <p className="text-muted-foreground">{activity.time}</p>
+                        </div>
+                      </div>
+                    )) : (
+                      <p className="text-xs text-muted-foreground">No recent AI activity</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="task" className="h-full mt-0">
@@ -282,63 +316,7 @@ export function InspectorPane({
             </ScrollArea>
           </TabsContent>
 
-          <TabsContent value="activity" className="h-full mt-0">
-            <ScrollArea className="h-full p-4">
-              <div className="space-y-4">
-                {/* Agent Activity */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1 text-xs font-medium">
-                    <Zap className="h-3 w-3 text-primary" />
-                    AI Agent Activity
-                  </div>
-                  <div className="space-y-2">
-                    {agentActivity.length > 0 ? agentActivity.map((activity, index) => (
-                      <div key={index} className="flex items-start gap-2 p-2 bg-muted/30 rounded text-xs">
-                        <div className={`h-3 w-3 rounded-full mt-0.5 shrink-0 ${
-                          activity.type === 'maintenance' ? 'bg-blue-500' :
-                          activity.type === 'enhancement' ? 'bg-green-500' :
-                          activity.type === 'bug' ? 'bg-red-500' : 'bg-gray-500'
-                        }`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium">{activity.action}</p>
-                          <p className="text-muted-foreground">{activity.time}</p>
-                        </div>
-                      </div>
-                    )) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        <p className="text-xs">No AI activity logged yet</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
 
-                <Separator />
-
-                {/* Team Activity */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1 text-xs font-medium">
-                    <Users className="h-3 w-3 text-blue-600" />
-                    Team Activity
-                  </div>
-                  <div className="space-y-2">
-                    {teamActivity.length > 0 ? teamActivity.map((activity, index) => (
-                      <div key={index} className="flex items-start gap-2 p-2 bg-muted/30 rounded text-xs">
-                        <User className="h-3 w-3 text-blue-600 mt-0.5 shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p><span className="font-medium">{activity.user}</span> {activity.action}</p>
-                          <p className="text-muted-foreground">{activity.time}</p>
-                        </div>
-                      </div>
-                    )) : (
-                      <div className="text-center py-4 text-muted-foreground">
-                        <p className="text-xs">No user activity logged yet</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </ScrollArea>
-          </TabsContent>
 
           <TabsContent value="feature" className="h-full mt-0">
             <FeatureRequestPanel className="h-full" />
