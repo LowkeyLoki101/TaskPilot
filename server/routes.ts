@@ -342,7 +342,8 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
         content: text,
         role: "user",
         projectId: projectId,
-        userId: "mock-user-id"
+        userId: "mock-user-id",
+        metadata: null
       });
 
       // Use AI to intelligently process the voice input
@@ -427,7 +428,7 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
         content: chatResponse,
         role: "assistant",
         projectId: projectId,
-        metadata: JSON.stringify([result])
+        metadata: [result]
       });
 
       // Broadcast to WebSocket clients

@@ -85,6 +85,22 @@ export function useWebSocket(projectId: string) {
         });
         break;
         
+      case "voice_processed":
+        // Voice command was processed, refresh both tasks and chat
+        queryClient.invalidateQueries({
+          queryKey: ["/api/projects", projectId, "tasks"]
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["/api/projects", projectId, "chat"]
+        });
+        if (data.data.result?.task) {
+          toast({
+            title: "Voice Command Processed",
+            description: `Created task: ${data.data.result.task.title}`
+          });
+        }
+        break;
+        
       default:
         console.log("Unknown WebSocket message type:", data.type);
     }

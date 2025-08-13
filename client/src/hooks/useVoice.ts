@@ -70,8 +70,15 @@ export function useVoice() {
       return response.json();
     },
     onSuccess: (data) => {
+      // Invalidate both tasks and chat to refresh UI
       queryClient.invalidateQueries({
         queryKey: ["/api/projects"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/projects", "default-project", "chat"]
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["/api/projects", "default-project", "tasks"]
       });
       
       // Show AI-generated response
