@@ -20,6 +20,10 @@ import { useQuery } from "@tanstack/react-query";
 
 interface DiagnosticsProps {
   className?: string;
+  aiActivityLog?: Array<{id: string, action: string, timestamp: Date, type: 'task' | 'bug' | 'enhancement' | 'maintenance'}>;
+  lastMaintenanceRun?: Date | null;
+  autonomyMode?: 'manual' | 'semi' | 'full';
+  onRunMaintenance?: () => void;
 }
 
 interface SystemStatus {
@@ -38,7 +42,13 @@ interface PerformanceMetrics {
   errorCount: number;
 }
 
-export function DiagnosticsPanel({ className }: DiagnosticsProps) {
+export function DiagnosticsPanel({ 
+  className,
+  aiActivityLog = [],
+  lastMaintenanceRun,
+  autonomyMode = 'manual',
+  onRunMaintenance
+}: DiagnosticsProps) {
   const [systemStatus, setSystemStatus] = useState<SystemStatus>({
     api: 'connected',
     websocket: 'connected', 
@@ -371,6 +381,89 @@ export function DiagnosticsPanel({ className }: DiagnosticsProps) {
               </Button>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* AI Autonomous System */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Zap className="h-4 w-4" />
+            AI Autonomous System
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Autonomy Mode:</span>
+              <Badge variant={autonomyMode === 'full' ? 'default' : autonomyMode === 'semi' ? 'secondary' : 'outline'} className="text-xs">
+                {autonomyMode === 'full' ? 'Full' : autonomyMode === 'semi' ? 'Semi' : 'Manual'}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">Last Maintenance:</span>
+              <span className="text-xs font-mono">
+                {lastMaintenanceRun ? lastMaintenanceRun.toLocaleTimeString() : 'Never'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">AI Actions Today:</span>
+              <Badge variant="outline" className="text-xs">{aiActivityLog.length}</Badge>
+            </div>
+          </div>
+          <Button 
+            onClick={onRunMaintenance}
+            disabled={autonomyMode === 'manual' || !onRunMaintenance}
+            size="sm" 
+            className="w-full h-6"
+            variant="outline"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Run Maintenance
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* AI Activity Log */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <Monitor className="h-4 w-4" />
+            AI Activity Log
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-32 w-full">
+            {aiActivityLog.length === 0 ? (
+              <div className="text-center text-muted-foreground py-4">
+                <Monitor className="h-6 w-6 mx-auto mb-1 opacity-50" />
+                <p className="text-xs">No AI activity yet</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {aiActivityLog.slice(-10).reverse().map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-2 p-1 rounded text-xs">
+                    <Badge 
+                      variant={
+                        activity.type === 'maintenance' ? 'default' : 
+                        activity.type === 'enhancement' ? 'secondary' : 
+                        activity.type === 'bug' ? 'destructive' : 'outline'
+                      }
+                      className="text-xs h-4 px-1"
+                    >
+                      {activity.type}
+                    </Badge>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs leading-tight">{activity.action}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>

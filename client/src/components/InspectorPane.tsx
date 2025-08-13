@@ -27,10 +27,23 @@ import {
 
 interface InspectorPaneProps {
   selectedTaskId?: string | null;
+  currentModule?: 'mindmap' | 'calendar' | 'tasks' | 'browser' | 'diagnostics';
+  autonomyMode?: 'manual' | 'semi' | 'full';
+  aiActivityLog?: Array<{id: string, action: string, timestamp: Date, type: 'task' | 'bug' | 'enhancement' | 'maintenance'}>;
+  lastMaintenanceRun?: Date | null;
+  onRunMaintenance?: () => void;
   className?: string;
 }
 
-export function InspectorPane({ selectedTaskId, className }: InspectorPaneProps) {
+export function InspectorPane({ 
+  selectedTaskId, 
+  currentModule = 'mindmap',
+  autonomyMode = 'manual',
+  aiActivityLog = [],
+  lastMaintenanceRun,
+  onRunMaintenance,
+  className 
+}: InspectorPaneProps) {
   const [activeTab, setActiveTab] = useState("ai");
 
   // Mock data for demonstration
@@ -289,7 +302,12 @@ export function InspectorPane({ selectedTaskId, className }: InspectorPaneProps)
 
           <TabsContent value="diagnostics" className="h-full mt-0">
             <div className="h-full p-4">
-              <DiagnosticsPanel />
+              <DiagnosticsPanel 
+                aiActivityLog={aiActivityLog}
+                lastMaintenanceRun={lastMaintenanceRun}
+                autonomyMode={autonomyMode}
+                onRunMaintenance={onRunMaintenance}
+              />
             </div>
           </TabsContent>
         </div>

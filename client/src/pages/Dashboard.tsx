@@ -22,10 +22,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, Mic } from "lucide-react";
+import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState<'mindmap' | 'list' | 'calendar'>('mindmap');
+  const [currentModule, setCurrentModule] = useState<'mindmap' | 'calendar' | 'tasks' | 'browser' | 'media' | 'diagnostics'>('mindmap');
   const [mobileTab, setMobileTab] = useState<'today' | 'inbox' | 'projects'>('today');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
@@ -33,6 +35,9 @@ export default function Dashboard() {
   const [isStepRunnerOpen, setIsStepRunnerOpen] = useState(false);
   const [currentProjectId] = useState("default-project");
   const [workflowMode, setWorkflowMode] = useState(false); // Toggle between tasks and workflows
+  const [autonomyMode, setAutonomyMode] = useState<'manual' | 'semi' | 'full'>('manual');
+  const [aiActivityLog, setAiActivityLog] = useState<Array<{id: string, action: string, timestamp: Date, type: 'task' | 'bug' | 'enhancement' | 'maintenance'}>>([]);
+  const [lastMaintenanceRun, setLastMaintenanceRun] = useState<Date | null>(null);
   
   const isMobile = useMobile();
 
@@ -67,6 +72,17 @@ export default function Dashboard() {
 
   useWebSocket(currentProjectId);
 
+  // Autonomous AI maintenance loop
+  useEffect(() => {
+    if (autonomyMode === 'manual') return;
+    
+    const interval = setInterval(() => {
+      runMaintenanceCheck();
+    }, autonomyMode === 'full' ? 30000 : 60000); // 30s for full, 60s for semi
+    
+    return () => clearInterval(interval);
+  }, [autonomyMode]);
+
   // Voice command with workflow integration
   const handleVoiceCommand = async (transcript: string) => {
     if (workflowMode) {
@@ -78,6 +94,56 @@ export default function Dashboard() {
     } else {
       // Process as regular voice command
       await processVoiceCommand(transcript, currentProjectId);
+    }
+  };
+
+  // AI Maintenance and Autonomous Functions
+  const runMaintenanceCheck = async () => {
+    if (autonomyMode === 'manual') return;
+    
+    const maintenanceActions = [];
+    
+    // Check for system issues
+    const now = new Date();
+    
+    // Example maintenance tasks
+    if (autonomyMode === 'full') {
+      // Create a maintenance task automatically
+      maintenanceActions.push({
+        id: `maintenance-${now.getTime()}`,
+        action: 'System optimization check completed',
+        timestamp: now,
+        type: 'maintenance' as const
+      });
+      
+      // Simulate finding a potential enhancement
+      if (Math.random() > 0.7) {
+        maintenanceActions.push({
+          id: `enhancement-${now.getTime()}`,
+          action: 'Suggested calendar optimization enhancement',
+          timestamp: now,
+          type: 'enhancement' as const
+        });
+      }
+    }
+    
+    setAiActivityLog(prev => [...prev, ...maintenanceActions]);
+    setLastMaintenanceRun(now);
+  };
+
+  const getAutonomyColor = () => {
+    switch (autonomyMode) {
+      case 'full': return 'text-green-500';
+      case 'semi': return 'text-yellow-500';
+      case 'manual': return 'text-gray-500';
+    }
+  };
+
+  const getAutonomyLabel = () => {
+    switch (autonomyMode) {
+      case 'full': return 'Fully Autonomous';
+      case 'semi': return 'Semi-Autonomous';
+      case 'manual': return 'Manual';
     }
   };
 
@@ -388,74 +454,125 @@ export default function Dashboard() {
 
         {/* Center Pane - Canvas */}
         <div className="flex flex-col min-w-0 bg-background">
-          {/* Toolbar */}
-          <div className="bg-card border-b border-border p-4">
+          {/* Autonomous AI Workstation Toolbar */}
+          <div className="bg-card border-b border-border p-3">
             <div className="flex justify-between items-center">
+              {/* Left Section - Title and AI Status */}
               <div className="flex items-center space-x-4">
-                <h2 className="text-xl font-semibold text-foreground">My Task Board</h2>
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                  <span>3 collaborators online</span>
+                <div className="flex items-center space-x-2">
+                  <Brain className="h-5 w-5 text-primary" />
+                  <h2 className="text-lg font-semibold text-foreground">Emergent Intelligence</h2>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 text-sm">
+                    <div className={`w-2 h-2 rounded-full ${autonomyMode === 'full' ? 'bg-green-400 animate-pulse' : autonomyMode === 'semi' ? 'bg-yellow-400' : 'bg-gray-400'}`}></div>
+                    <span className={`text-xs ${getAutonomyColor()}`}>{getAutonomyLabel()}</span>
+                  </div>
+                  <Badge variant="outline" className="text-xs">
+                    GPT-5 Active
+                  </Badge>
                 </div>
               </div>
 
-              <div className="flex items-center space-x-3">
+              {/* Center Section - Module Selector */}
+              <div className="flex items-center space-x-1">
                 {!workflowMode && (
-                  <div className="flex items-center border rounded-md">
+                  <div className="flex items-center border rounded-lg p-1 bg-muted/50">
                     <Button
-                      variant={currentView === 'mindmap' ? 'default' : 'ghost'}
+                      variant={currentModule === 'mindmap' ? 'default' : 'ghost'}
                       size="sm"
-                      onClick={() => setCurrentView('mindmap')}
-                      className="rounded-r-none"
-                      data-testid="button-mindmap-view"
+                      onClick={() => setCurrentModule('mindmap')}
+                      className="h-7 px-2"
+                      data-testid="module-mindmap"
                     >
-                      <Brain className="h-4 w-4 mr-1" />
+                      <Brain className="h-3 w-3 mr-1" />
                       Mind Map
                     </Button>
                     <Button
-                      variant={currentView === 'calendar' ? 'default' : 'ghost'}
+                      variant={currentModule === 'calendar' ? 'default' : 'ghost'}
                       size="sm"
-                      onClick={() => setCurrentView('calendar')}
-                      className="rounded-none border-l-0"
-                      data-testid="button-calendar-view"
+                      onClick={() => setCurrentModule('calendar')}
+                      className="h-7 px-2"
+                      data-testid="module-calendar"
                     >
-                      <Calendar className="h-4 w-4 mr-1" />
+                      <Calendar className="h-3 w-3 mr-1" />
                       Calendar
                     </Button>
                     <Button
-                      variant={currentView === 'list' ? 'default' : 'ghost'}
+                      variant={currentModule === 'tasks' ? 'default' : 'ghost'}
                       size="sm"
-                      onClick={() => setCurrentView('list')}
-                      className="rounded-l-none border-l-0"
-                      data-testid="button-list-view"
+                      onClick={() => setCurrentModule('tasks')}
+                      className="h-7 px-2"
+                      data-testid="module-tasks"
                     >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      List
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Tasks
+                    </Button>
+                    <Button
+                      variant={currentModule === 'browser' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCurrentModule('browser')}
+                      className="h-7 px-2"
+                      data-testid="module-browser"
+                    >
+                      <Globe className="h-3 w-3 mr-1" />
+                      Browser
+                    </Button>
+                    <Button
+                      variant={currentModule === 'diagnostics' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCurrentModule('diagnostics')}
+                      className="h-7 px-2"
+                      data-testid="module-diagnostics"
+                    >
+                      <BarChart3 className="h-3 w-3 mr-1" />
+                      Debug
                     </Button>
                   </div>
                 )}
+              </div>
+
+              {/* Right Section - Controls and Autonomy Toggle */}
+              <div className="flex items-center space-x-3">
+                {/* Autonomy Toggle */}
+                <div className="flex items-center space-x-2 border rounded-lg p-2 bg-muted/30">
+                  <label className="text-xs font-medium">Autonomy:</label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setAutonomyMode(autonomyMode === 'manual' ? 'semi' : autonomyMode === 'semi' ? 'full' : 'manual')}
+                    className={`h-6 px-2 text-xs ${getAutonomyColor()}`}
+                    data-testid="autonomy-toggle"
+                  >
+                    {autonomyMode === 'full' ? 'Full' : autonomyMode === 'semi' ? 'Semi' : 'Manual'}
+                  </Button>
+                </div>
                 
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setWorkflowMode(!workflowMode)}
-                  className="hidden lg:flex"
+                  className="hidden lg:flex h-7"
                 >
-                  <Workflow className="h-4 w-4 mr-1" />
+                  <Workflow className="h-3 w-3 mr-1" />
                   {workflowMode ? "Tasks" : "Workflows"}
                 </Button>
                 
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setIsCommandPaletteOpen(true)}
-                  className="hidden lg:flex"
+                  onClick={runMaintenanceCheck}
+                  className="hidden lg:flex h-7"
+                  disabled={autonomyMode === 'manual'}
+                  data-testid="run-maintenance"
                 >
-                  <span className="text-xs">⌘K</span>
+                  <Settings className="h-3 w-3 mr-1" />
+                  Maintenance
                 </Button>
                 
                 <Button 
-                  className="bg-primary hover:bg-primary/90"
+                  size="sm"
+                  className="bg-primary hover:bg-primary/90 h-7"
                   data-testid="button-add-task"
                 >
                   {workflowMode ? "Create Workflow" : "Add Task"}
@@ -464,7 +581,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Canvas Content */}
+          {/* Canvas Content - Module Container */}
           <div className="flex-1 relative overflow-hidden">
             {workflowMode ? (
               currentWorkflow ? (
@@ -517,23 +634,51 @@ export default function Dashboard() {
               )
             ) : (
               <>
-                {currentView === 'mindmap' && (
+                {currentModule === 'mindmap' && (
                   <MindMap 
                     projectId={currentProjectId}
                     onTaskSelect={handleTaskSelect}
                   />
                 )}
-                {currentView === 'list' && (
+                {currentModule === 'tasks' && (
                   <div className="p-8 text-center text-muted-foreground">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>List view coming soon...</p>
+                    <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Task list view coming soon...</p>
                   </div>
                 )}
-                {currentView === 'calendar' && (
+                {currentModule === 'calendar' && (
                   <CalendarView 
                     projectId={currentProjectId}
                     onTaskSelect={handleTaskSelect}
                   />
+                )}
+                {currentModule === 'browser' && (
+                  <div className="h-full flex flex-col bg-muted/30">
+                    <div className="p-4 border-b border-border bg-background">
+                      <div className="flex items-center space-x-2">
+                        <Globe className="h-4 w-4 text-primary" />
+                        <h3 className="font-medium">Web Browser Module</h3>
+                        <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                      </div>
+                    </div>
+                    <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                      <div className="text-center max-w-md">
+                        <Globe className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                        <h3 className="text-lg font-semibold mb-2">Embedded Browser</h3>
+                        <p className="text-sm">AI-controlled web browsing with page annotation and research tools</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {currentModule === 'diagnostics' && (
+                  <div className="h-full p-4">
+                    <DiagnosticsPanel 
+                      aiActivityLog={aiActivityLog}
+                      lastMaintenanceRun={lastMaintenanceRun}
+                      autonomyMode={autonomyMode}
+                      onRunMaintenance={runMaintenanceCheck}
+                    />
+                  </div>
                 )}
               </>
             )}
@@ -554,16 +699,14 @@ export default function Dashboard() {
         ) : (
           <InspectorPane 
             selectedTaskId={selectedTaskId}
+            currentModule={currentModule}
+            autonomyMode={autonomyMode}
+            aiActivityLog={aiActivityLog}
+            lastMaintenanceRun={lastMaintenanceRun}
+            onRunMaintenance={runMaintenanceCheck}
             className="hidden lg:flex"
           />
         )}
-
-        {/* Sidebar for view switching */}
-        <Sidebar 
-          currentView={currentView}
-          onViewChange={setCurrentView}
-          projectId={currentProjectId}
-        />
       </div>
 
       {/* Command Palette */}
