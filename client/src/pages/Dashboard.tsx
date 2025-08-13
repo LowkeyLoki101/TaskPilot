@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 
 import MindMap from "@/components/MindMap";
@@ -38,7 +39,6 @@ export default function Dashboard() {
   const [currentProjectId] = useState("default-project");
   const [workflowMode, setWorkflowMode] = useState(false); // Toggle between tasks and workflows
   const [autonomyMode, setAutonomyMode] = useState<'manual' | 'semi' | 'full'>('manual');
-  const [aiActivityLog, setAiActivityLog] = useState<Array<{id: string, action: string, timestamp: Date, type: 'task' | 'bug' | 'enhancement' | 'maintenance'}>>([]);
   const [lastMaintenanceRun, setLastMaintenanceRun] = useState<Date | null>(null);
   
   const isMobile = useMobile();
@@ -99,75 +99,38 @@ export default function Dashboard() {
     }
   };
 
-  // AI Maintenance and Autonomous Functions
+  // Real AI Activity Tracking - fetches actual system activities
+  const { data: aiActivityLog = [], refetch: refetchActivity } = useQuery({
+    queryKey: ['/api/activity'],
+    queryFn: async () => {
+      const response = await fetch('/api/activity?limit=50');
+      if (!response.ok) throw new Error('Failed to fetch activity log');
+      return response.json();
+    },
+    refetchInterval: 5000, // Refresh every 5 seconds
+  });
+
+  // Real AI Maintenance and Autonomous Functions
   const runMaintenanceCheck = async () => {
     console.log('Running autonomous maintenance check...');
     
-    const now = new Date();
-    const maintenanceActions: Array<{id: string, action: string, timestamp: Date, type: 'task' | 'bug' | 'enhancement' | 'maintenance'}> = [];
-    
-    // Enhanced autonomous system checks with real actions
-    if (autonomyMode === 'full' || autonomyMode === 'semi') {
-      const systemActions = [
-        "Optimized task priorities based on deadlines",
-        "Detected and resolved duplicate calendar entries", 
-        "Updated mind map layout for better visual clarity",
-        "Cleared unused browser cache and cookies",
-        "Synchronized project data across all modules",
-        "Analyzed user patterns for productivity insights",
-        "Verified system connectivity and performance",
-        "Updated AI model parameters for better responses",
-        "Reorganized task dependencies automatically",
-        "Enhanced voice recognition accuracy",
-        "Optimized module loading performance",
-        "Scheduled automatic backup operations"
-      ];
-      
-      // Pick 1-3 random actions based on autonomy level
-      const numActions = autonomyMode === 'full' ? Math.floor(Math.random() * 3) + 1 : 1;
-      const selectedActions = systemActions.sort(() => 0.5 - Math.random()).slice(0, numActions);
-      
-      selectedActions.forEach((action, index) => {
-        maintenanceActions.push({
-          id: `maintenance-${now.getTime()}-${index}`,
-          action,
-          timestamp: new Date(now.getTime() + index * 100), // Slight time offset
-          type: 'maintenance' as const
-        });
-      });
-      
-      // Simulate finding potential enhancements (more likely in full mode)
-      const enhancementChance = autonomyMode === 'full' ? 0.4 : 0.2;
-      if (Math.random() < enhancementChance) {
-        const enhancements = [
-          "Suggested new keyboard shortcuts for efficiency",
-          "Identified opportunity for task automation",
-          "Recommended calendar integration improvements",
-          "Found potential workflow optimization",
-          "Detected pattern for proactive task creation"
-        ];
-        
-        maintenanceActions.push({
-          id: `enhancement-${now.getTime()}`,
-          action: enhancements[Math.floor(Math.random() * enhancements.length)],
-          timestamp: new Date(now.getTime() + 500),
-          type: 'enhancement' as const
-        });
+    try {
+      // Check system health endpoints
+      const healthCheck = await fetch('/api/health');
+      if (healthCheck.ok) {
+        console.log('✅ System health check passed');
       }
+
+      // Refresh activity log to show latest real data
+      refetchActivity();
+
+      // Update last maintenance timestamp
+      setLastMaintenanceRun(new Date());
       
-      // Occasionally create proactive tasks in full mode
-      if (autonomyMode === 'full' && Math.random() < 0.3) {
-        maintenanceActions.push({
-          id: `task-${now.getTime()}`,
-          action: "Created proactive task: Review weekly productivity metrics",
-          timestamp: new Date(now.getTime() + 600),
-          type: 'task' as const
-        });
-      }
+      console.log('🔄 Maintenance cycle completed at', new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('❌ Maintenance cycle failed:', error);
     }
-    
-    setAiActivityLog(prev => [...maintenanceActions, ...prev].slice(0, 50)); // Keep last 50
-    setLastMaintenanceRun(now);
   };
 
   const getAutonomyColor = () => {
@@ -702,6 +665,10 @@ export default function Dashboard() {
                         </div>
                         <div className="flex items-center space-x-2">
                           <Badge variant="outline" className="text-xs">Beta</Badge>
+                          <Button size="sm" variant="outline">
+                            <Youtube className="h-3 w-3 mr-1" />
+                            YouTube
+                          </Button>
                           <Button size="sm" variant="outline">
                             <Search className="h-3 w-3 mr-1" />
                             Search

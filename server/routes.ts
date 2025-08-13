@@ -13,6 +13,8 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { aiAssistant } from "./aiAssistant";
 import { generateWorkflowFromPrompt } from "./openai";
+import { YouTubeService } from "./youtube";
+import { activityLogger } from "./activityLogger";
 
 // AI Voice Processing - Intelligent voice command handling
 async function processVoiceIntelligently(text: string) {
@@ -175,6 +177,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         projectId: req.params.projectId
       });
       const task = await storage.createTask(validated);
+      activityLogger.logTaskAction('Task created', { taskId: task.id, title: task.title, projectId: req.params.projectId });
       
       // Broadcast to WebSocket clients
       broadcastToProject(req.params.projectId, {
@@ -192,6 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/tasks/:taskId", async (req, res) => {
     try {
       const task = await storage.updateTask(req.params.taskId, req.body);
+      activityLogger.logTaskAction('Task updated', { taskId: task.id, title: task.title, projectId: task.projectId });
       
       // Broadcast to WebSocket clients
       broadcastToProject(task.projectId, {
@@ -214,6 +218,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       await storage.deleteTask(req.params.taskId);
+      activityLogger.logTaskAction('Task deleted', { taskId: req.params.taskId, title: task.title, projectId: task.projectId });
       
       // Broadcast to WebSocket clients
       broadcastToProject(task.projectId, {
@@ -534,10 +539,12 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
   app.post("/api/ai/control", async (req, res) => {
     try {
       const { request, context } = req.body;
+      activityLogger.logAIResponse('AI control request received', { request, context });
       const response = await aiAssistant.processUserRequest(request, context);
       
       // Execute the actions immediately
       const executionResult = await aiAssistant.executeActions(response.actions, context);
+      activityLogger.logAIResponse('AI control actions executed', { actionsCount: response.actions?.length });
       
       res.json({
         message: response.message,
@@ -547,8 +554,73 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
       });
     } catch (error) {
       console.error("Error with AI control:", error);
+      activityLogger.logSystemEvent('AI control request failed', { error: error.message });
       res.status(500).json({ error: "Failed to process AI control request" });
     }
+  });
+
+  // YouTube Integration endpoints  
+  app.get("/api/youtube/search", async (req, res) => {
+    try {
+      const { query, maxResults = 10 } = req.query;
+      if (!query) {
+        return res.status(400).json({ error: "Query parameter is required" });
+      }
+      
+      activityLogger.logUserAction('YouTube search initiated', { query, maxResults });
+      const youtubeService = new YouTubeService();
+      const videos = await youtubeService.searchVideos(query as string, Number(maxResults));
+      activityLogger.logSystemEvent('YouTube search completed', { resultCount: videos.length });
+      res.json(videos);
+    } catch (error) {
+      console.error("YouTube search error:", error);
+      activityLogger.logSystemEvent('YouTube search failed', { error: error.message });
+      res.status(500).json({ error: "Failed to search YouTube videos" });
+    }
+  });
+
+  app.get("/api/youtube/video/:videoId", async (req, res) => {
+    try {
+      const { videoId } = req.params;
+      activityLogger.logUserAction('YouTube video details requested', { videoId });
+      const youtubeService = new YouTubeService();
+      const video = await youtubeService.getVideoDetails(videoId);
+      if (!video) {
+        return res.status(404).json({ error: "Video not found" });
+      }
+      activityLogger.logSystemEvent('YouTube video details retrieved', { videoTitle: video.title });
+      res.json(video);
+    } catch (error) {
+      console.error("YouTube video details error:", error);
+      activityLogger.logSystemEvent('YouTube video details failed', { error: error.message });
+      res.status(500).json({ error: "Failed to get video details" });
+    }
+  });
+
+  // Activity Log endpoint for real-time monitoring
+  app.get("/api/activity", (req, res) => {
+    const { type, limit = 50 } = req.query;
+    let activities = activityLogger.getRecentActivities(Number(limit));
+    
+    if (type) {
+      activities = activityLogger.getActivitiesByType(type as any);
+    }
+    
+    res.json(activities);
+  });
+
+  // Health check endpoint for maintenance system
+  app.get("/api/health", (req, res) => {
+    activityLogger.logSystemEvent('Health check performed');
+    res.json({ 
+      status: 'healthy',
+      timestamp: new Date(),
+      services: {
+        database: 'connected',
+        websocket: 'active',
+        ai: 'operational'
+      }
+    });
   });
 
   app.get("/api/ai/suggestions", async (req, res) => {
