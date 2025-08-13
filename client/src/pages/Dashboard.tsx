@@ -34,7 +34,7 @@ import { Switch } from "@/components/ui/switch";
 
 export default function Dashboard() {
 
-  const [currentModule, setCurrentModule] = useState<'mindmap' | 'calendar' | 'tasks' | 'browser' | 'media' | 'diagnostics'>('mindmap');
+  const [currentModule, setCurrentModule] = useState<'mindmap' | 'calendar' | 'tasks' | 'browser' | 'diagnostics' | 'agents'>('mindmap');
   const [mobileTab, setMobileTab] = useState<'today' | 'inbox' | 'projects'>('today');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
@@ -524,71 +524,86 @@ export default function Dashboard() {
           isVoiceActive={isListening}
         />
         
-        {/* Mobile Content */}
-        <div className="h-[calc(100vh-4rem-4rem)] overflow-hidden">
+        {/* Mobile Content - Adjusted for single bottom nav */}
+        <div className="h-[calc(100vh-4rem-4rem)] overflow-hidden pb-safe">
           {mobileTab === 'today' && (
             <div className="h-full flex flex-col">
               {/* Header */}
-              <div className="p-4 border-b border-border">
+              <div className="px-4 py-3 border-b border-border bg-card/50">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold">Today</h2>
-                    <p className="text-sm text-muted-foreground">{todayTasks.length} tasks</p>
+                    <h2 className="text-xl font-bold">Today</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">{todayTasks.length} {todayTasks.length === 1 ? 'task' : 'tasks'}</p>
                   </div>
-                  <Badge variant="outline" className="text-xs">
-                    {new Date().toLocaleDateString()}
+                  <Badge variant="outline" className="text-xs px-2 py-1">
+                    {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </Badge>
                 </div>
               </div>
 
               {/* Task List */}
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-3">
-                  {todayTasks.map((task) => (
-                    <Card 
-                      key={task.id}
-                      className="cursor-pointer hover:bg-accent/50 transition-colors"
-                      onClick={() => handleTaskSelect(task.id)}
-                      data-testid={`task-card-${task.id}`}
-                    >
-                      <CardContent className="p-4">
-                        <div className="space-y-2">
-                          <div className="flex items-start justify-between">
-                            <h3 className="font-medium text-sm leading-tight">{task.title}</h3>
-                            <Badge 
-                              variant={task.priority === "high" ? "destructive" : "outline"}
-                              className="text-xs ml-2 shrink-0"
-                            >
-                              {task.priority}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <CheckCircle className="h-3 w-3" />
-                              <span>{task.steps.filter(s => s.completed).length}/{task.steps.length}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              <span>Due today</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <User className="h-3 w-3" />
-                              <span>{task.assignee}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex flex-wrap gap-1">
-                            {task.tags.map((tag) => (
-                              <Badge key={tag} variant="outline" className="text-xs">
-                                {tag}
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-3">
+                  {todayTasks.length === 0 ? (
+                    <div className="text-center py-12">
+                      <CheckCircle className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                      <p className="text-muted-foreground text-sm">No tasks for today</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">Use the + button to add a task</p>
+                    </div>
+                  ) : (
+                    todayTasks.map((task) => (
+                      <Card 
+                        key={task.id}
+                        className="cursor-pointer active:scale-98 transition-all duration-150 hover:shadow-md"
+                        onClick={() => handleTaskSelect(task.id)}
+                        data-testid={`task-card-${task.id}`}
+                      >
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="font-semibold text-base leading-tight flex-1">{task.title}</h3>
+                              <Badge 
+                                variant={task.priority === "high" ? "destructive" : task.priority === "medium" ? "default" : "outline"}
+                                className="text-xs px-2 py-0.5 shrink-0"
+                              >
+                                {task.priority}
                               </Badge>
-                            ))}
+                            </div>
+                            
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-1">
+                                <CheckCircle className="h-3.5 w-3.5" />
+                                <span className="font-medium">{task.steps.filter(s => s.completed).length}/{task.steps.length}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3.5 w-3.5" />
+                                <span className="font-medium">Due today</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <User className="h-3.5 w-3.5" />
+                                <span className="font-medium">{task.assignee || 'You'}</span>
+                              </div>
+                            </div>
+
+                            {task.tags && task.tags.length > 0 && (
+                              <div className="flex flex-wrap gap-1.5">
+                                {task.tags.slice(0, 3).map((tag) => (
+                                  <Badge key={tag} variant="secondary" className="text-xs py-0.5 px-2">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                                {task.tags.length > 3 && (
+                                  <Badge variant="outline" className="text-xs py-0.5 px-2">
+                                    +{task.tags.length - 3}
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                        </CardContent>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </ScrollArea>
             </div>
