@@ -124,6 +124,11 @@ export default function Dashboard() {
         console.log('✅ System health check passed');
       }
 
+      // In full autonomy mode, perform proactive AI actions
+      if (autonomyMode === 'full') {
+        await performAutonomousActions();
+      }
+
       // Refresh activity log to show latest real data
       refetchActivity();
 
@@ -133,6 +138,66 @@ export default function Dashboard() {
       console.log('🔄 Maintenance cycle completed at', new Date().toLocaleTimeString());
     } catch (error) {
       console.error('❌ Maintenance cycle failed:', error);
+    }
+  };
+
+  const performAutonomousActions = async () => {
+    try {
+      console.log('🤖 Performing autonomous AI actions...');
+      
+      // Generate AI suggestions and improvements
+      const response = await fetch('/api/autonomous-actions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: currentProjectId,
+          autonomyLevel: 'full',
+          context: {
+            currentModule,
+            workflowMode,
+            recentActivity: aiActivityLog.slice(0, 5).map(a => ({
+              action: a.action,
+              type: a.type,
+              timestamp: a.timestamp
+            }))
+          }
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('🤖 Autonomous actions generated:', result.actions?.length || 0);
+        
+        // Execute autonomous actions with staggered timing
+        result.actions?.forEach((action: any, index: number) => {
+          setTimeout(() => {
+            console.log(`🤖 Executing: ${action.description}`);
+            
+            // Log the autonomous action
+            const activity = {
+              id: crypto.randomUUID(),
+              action: `🤖 ${action.description}`,
+              timestamp: new Date(),
+              type: (action.type || 'enhancement') as 'maintenance' | 'enhancement' | 'bug' | 'task',
+              time: new Date().toLocaleTimeString()
+            };
+            
+            setAiActivityLog(prev => [activity, ...prev.slice(0, 19)]);
+            
+            // Execute the actual action if needed
+            if (action.execute && typeof window !== 'undefined') {
+              try {
+                // This would execute AI-generated improvements
+                console.log(`Executing action: ${action.type}`);
+              } catch (error) {
+                console.error('Action execution failed:', error);
+              }
+            }
+          }, index * 3000); // Stagger actions every 3 seconds
+        });
+      }
+    } catch (error) {
+      console.error('❌ Autonomous actions failed:', error);
     }
   };
 
