@@ -84,12 +84,17 @@ export default function MindMap({ projectId, onTaskSelect }: MindMapProps) {
         type: "central",
         status: "active"
       },
-      ...tasks.map((task, index) => ({
-        ...task,
-        x: task.position?.x || (width / 2 + Math.cos(index * Math.PI / 2) * 200),
-        y: task.position?.y || (height / 2 + Math.sin(index * Math.PI / 2) * 200),
-        type: "task"
-      }))
+      ...tasks.map((task, index) => {
+        // If task has no position, distribute evenly in circle
+        const angle = (index * 2 * Math.PI) / tasks.length;
+        const radius = 250;
+        return {
+          ...task,
+          x: task.position?.x || (width / 2 + Math.cos(angle) * radius),
+          y: task.position?.y || (height / 2 + Math.sin(angle) * radius),
+          type: "task"
+        };
+      })
     ];
 
     const linkData = tasks.map(task => ({

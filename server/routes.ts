@@ -353,13 +353,23 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
       let chatResponse = "";
 
       if (aiAnalysis.action === 'TASK_CREATE') {
-        // Auto-create task with AI-determined properties
+        // Auto-create task with AI-determined properties and position
+        const existingTasks = await storage.getProjectTasks(projectId);
+        const angle = (existingTasks.length * 2 * Math.PI) / (existingTasks.length + 1);
+        const radius = 250;
+        const centerX = 400; // Approximate center
+        const centerY = 300;
+        
         const task = await storage.createTask({
           title: aiAnalysis.title || text,
           description: "",
           status: "todo",
           priority: aiAnalysis.priority || 'medium',
-          projectId: projectId
+          projectId: projectId,
+          position: {
+            x: centerX + Math.cos(angle) * radius,
+            y: centerY + Math.sin(angle) * radius
+          }
         });
         
         result = {
@@ -406,13 +416,23 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
         };
         
       } else {
-        // Default to task creation if unclear
+        // Default to task creation if unclear - with position
+        const existingTasks = await storage.getProjectTasks(projectId);
+        const angle = (existingTasks.length * 2 * Math.PI) / (existingTasks.length + 1);
+        const radius = 250;
+        const centerX = 400; 
+        const centerY = 300;
+        
         const task = await storage.createTask({
           title: text.substring(0, 100), // Limit title length
           description: "Created via voice input",
           status: "todo",
           priority: 'medium',
-          projectId: projectId
+          projectId: projectId,
+          position: {
+            x: centerX + Math.cos(angle) * radius,
+            y: centerY + Math.sin(angle) * radius
+          }
         });
         
         chatResponse = `✅ I created a task from your voice input: "${task.title}". You can find it in your task list.`;
