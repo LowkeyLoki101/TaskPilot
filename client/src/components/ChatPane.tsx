@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Send, Bot, User, Zap, Mic, MicOff, Upload } from "lucide-react";
+import { Send, Bot, User, Zap, Mic, MicOff, Upload, Paperclip } from "lucide-react";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
 import { useVoice } from "@/hooks/useVoice";
@@ -27,6 +27,7 @@ interface ChatPaneProps {
 
 export function ChatPane({ projectId, className }: ChatPaneProps) {
   const [message, setMessage] = useState("");
+  const [attachedFiles, setAttachedFiles] = useState<string[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   
@@ -41,10 +42,19 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
   // Send message mutation
   const sendMessage = useMutation({
     mutationFn: async (content: string) => {
-      return apiRequest(`/api/projects/${projectId}/chat`, {
+      const response = await fetch(`/api/projects/${projectId}/chat`, {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ content, role: "user" })
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/projects", projectId, "chat"] });
@@ -57,7 +67,12 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
     const content = transcript || message;
     if (!content.trim() || sendMessage.isPending) return;
     
-    sendMessage.mutate(content);
+    const messageWithFiles = attachedFiles.length > 0 
+      ? `${content}\n\nAttached files: ${attachedFiles.join(', ')}`
+      : content;
+    
+    sendMessage.mutate(messageWithFiles);
+    setAttachedFiles([]);
     if (transcript) {
       stopListening();
     }
@@ -68,6 +83,20 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
       stopListening();
     } else {
       startListening();
+    }
+  };
+
+  const handleFileUpload = async () => {
+    return {
+      method: 'PUT' as const,
+      url: '/api/objects/upload' // This will need to be implemented
+    };
+  };
+
+  const handleUploadComplete = (result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+    if (result.successful && result.successful.length > 0) {
+      const newFiles = result.successful.map((file: any) => file.name || 'uploaded-file');
+      setAttachedFiles(prev => [...prev, ...newFiles]);
     }
   };
 
@@ -172,6 +201,25 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
 
       {/* Input Area */}
       <div className="p-2 border-t border-border bg-muted/20">
+        {/* Attached Files Display */}
+        {attachedFiles.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-1">
+            {attachedFiles.map((file, index) => (
+              <Badge key={index} variant="secondary" className="text-xs">
+                <Paperclip className="h-3 w-3 mr-1" />
+                {file}
+                <button
+                  type="button"
+                  onClick={() => setAttachedFiles(prev => prev.filter((_, i) => i !== index))}
+                  className="ml-1 hover:text-destructive"
+                >
+                  ×
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+        
         <form onSubmit={handleSubmit} className="space-y-2">
           <div className="flex gap-1">
             <Input
@@ -182,6 +230,16 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
               disabled={sendMessage.isPending}
               data-testid="input-chat-message"
             />
+            
+            <ObjectUploader
+              maxNumberOfFiles={3}
+              maxFileSize={10485760} // 10MB
+              onGetUploadParameters={handleFileUpload}
+              onComplete={handleUploadComplete}
+              buttonClassName="h-8 w-8 p-0"
+            >
+              <Upload className="h-3 w-3" />
+            </ObjectUploader>
             
             <Button
               type="button"
@@ -198,7 +256,7 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
               type="submit" 
               size="sm"
               className="h-8 w-8 p-0"
-              disabled={!message.trim() && !transcript?.trim() || sendMessage.isPending}
+              disabled={(!message.trim() && !transcript?.trim()) || sendMessage.isPending}
               data-testid="button-send-message"
             >
               <Send className="h-3 w-3" />
