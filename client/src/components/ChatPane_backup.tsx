@@ -43,7 +43,7 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
     mutationFn: async (content: string) => {
       return apiRequest(`/api/projects/${projectId}/chat`, {
         method: "POST",
-        body: JSON.stringify({ content, role: "user" })
+        body: JSON.stringify({ content })
       });
     },
     onSuccess: () => {
@@ -174,7 +174,7 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
 
       <Separator />
 
-      {/* Single Input Form - No Duplication */}
+      {/* Input */}
       <div className="p-4">
         <form onSubmit={handleSubmit} className="space-y-2">
           <div className="flex gap-2">
