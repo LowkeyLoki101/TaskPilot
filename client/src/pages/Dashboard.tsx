@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import Header from "@/components/Header";
 
 import MindMap from "@/components/MindMap";
+import { WorkflowMindMap } from "@/components/WorkflowMindMap";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
 import VoiceModal from "@/components/VoiceModal";
 import { ChatPane } from "@/components/ChatPane";
@@ -637,9 +638,8 @@ export default function Dashboard() {
             ) : (
               <>
                 {currentModule === 'mindmap' && (
-                  <MindMap 
+                  <WorkflowMindMap 
                     projectId={currentProjectId}
-                    onTaskSelect={handleTaskSelect}
                   />
                 )}
                 {currentModule === 'tasks' && (

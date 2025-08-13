@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CheckCircle, Plus, Clock, User, Calendar as CalendarIcon } from "lucide-react";
+import { CheckCircle, Plus, Clock, User, Calendar as CalendarIcon, X } from "lucide-react";
 
 interface Task {
   id: string;
@@ -21,9 +21,32 @@ interface TaskListViewProps {
 }
 
 export function TaskListView({ projectId, onTaskSelect }: TaskListViewProps) {
-  const { data: tasks = [], isLoading } = useQuery<Task[]>({
+  const { data: tasks = [], isLoading, refetch } = useQuery<Task[]>({
     queryKey: [`/api/projects/${projectId}/tasks`],
   });
+
+  const deleteAllTasks = async () => {
+    if (!window.confirm('Are you sure you want to delete ALL tasks? This cannot be undone.')) {
+      return;
+    }
+    
+    try {
+      const response = await fetch(`/api/projects/${projectId}/tasks`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        console.log(`Deleted ${result.deletedCount} tasks`);
+        // Refresh task list
+        await refetch();
+      } else {
+        console.error('Failed to delete tasks');
+      }
+    } catch (error) {
+      console.error('Error deleting tasks:', error);
+    }
+  };
 
   const pendingTasks = tasks.filter(task => !task.completed);
   const completedTasks = tasks.filter(task => task.completed);
@@ -75,6 +98,15 @@ export function TaskListView({ projectId, onTaskSelect }: TaskListViewProps) {
             <Badge variant="outline" className="text-xs">
               {pendingTasks.length} pending
             </Badge>
+            <Button 
+              size="sm" 
+              variant="destructive"
+              onClick={deleteAllTasks}
+              data-testid="delete-all-tasks"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Delete All
+            </Button>
             <Button size="sm" variant="outline" data-testid="button-add-task">
               <Plus className="h-3 w-3 mr-1" />
               Add Task

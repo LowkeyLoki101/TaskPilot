@@ -233,6 +233,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete all tasks in a project
+  app.delete("/api/projects/:projectId/tasks", async (req, res) => {
+    try {
+      const tasks = await storage.getTasksByProject(req.params.projectId);
+      
+      for (const task of tasks) {
+        await storage.deleteTask(task.id);
+        activityLogger.logTaskAction('Task deleted (bulk)', { taskId: task.id, title: task.title, projectId: req.params.projectId });
+      }
+      
+      // Broadcast to WebSocket clients
+      broadcastToProject(req.params.projectId, {
+        type: "tasks_bulk_deleted",
+        data: { count: tasks.length }
+      });
+      
+      res.json({ success: true, deletedCount: tasks.length });
+    } catch (error) {
+      console.error("Error deleting all tasks:", error);
+      res.status(500).json({ error: "Failed to delete all tasks" });
+    }
+  });
+
   // Comments
   app.get("/api/tasks/:taskId/comments", async (req, res) => {
     try {

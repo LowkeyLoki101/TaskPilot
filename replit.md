@@ -157,3 +157,12 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 - **INTEGRATED**: YouTube endpoints in browser module with search and video detail functionality
 - **ENHANCED**: Health check endpoint for autonomous maintenance system verification
 - **CONNECTED**: Real activity data flowing from server to diagnostics panels for authentic monitoring
+
+### Workflow Mind Map Redesign (August 2025)
+- **CREATED**: New WorkflowMindMap component as requested - project-centered workflow orchestration hub
+- **IMPLEMENTED**: "Tools" toggle system with configurable sub-categories (YouTube videos, product manuals, files, art generator, web search, etc.)
+- **ADDED**: Sequential "Steps" system with drag-drop reordering, (+) add steps, and multi-step tool assignment
+- **BUILT**: "Begin" execution button that opens only required tools for each step sequentially  
+- **INTEGRATED**: GPT-5 control system for tool creation, modification, and deletion
+- **ENHANCED**: AI utility belt with web search, image creation, file handling, and knowledge base access
+- **FIXED**: Task deletion functionality with bulk delete endpoint and UI button for clearing all tasks
