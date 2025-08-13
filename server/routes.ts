@@ -227,6 +227,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Activity Logging Endpoint - allows frontend to log activities
+  app.post("/api/activity-log", async (req, res) => {
+    try {
+      const { action, type, details } = req.body;
+      
+      if (!action || !type) {
+        return res.status(400).json({ error: "action and type are required" });
+      }
+      
+      const entry = activityLogger.log(action, type, details);
+      res.json(entry);
+    } catch (error) {
+      console.error("Error logging activity:", error);
+      res.status(500).json({ error: "Failed to log activity" });
+    }
+  });
+
   // Feature Request System
   app.get("/api/feature-requests", async (req, res) => {
     try {

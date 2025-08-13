@@ -126,16 +126,46 @@ export default function Dashboard() {
   const runMaintenanceCheck = async () => {
     console.log('Running autonomous maintenance check...');
     
+    // Log maintenance start
+    await fetch('/api/activity-log', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'Starting autonomous maintenance check',
+        type: 'maintenance'
+      })
+    });
+    
     try {
       // Check system health endpoints
       const healthCheck = await fetch('/api/health');
       if (healthCheck.ok) {
         console.log('✅ System health check passed');
+        
+        // Log successful health check
+        await fetch('/api/activity-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'System health check passed - all services operational',
+            type: 'system'
+          })
+        });
       }
 
       // In full autonomy mode, perform proactive AI actions
       if (autonomyMode === 'full') {
         await performAutonomousActions();
+        
+        // Log autonomous actions
+        await fetch('/api/activity-log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'Executed autonomous AI actions in full mode',
+            type: 'ai_response'
+          })
+        });
       }
 
       // Refresh activity log to show latest real data
@@ -144,9 +174,30 @@ export default function Dashboard() {
       // Update last maintenance timestamp
       setLastMaintenanceRun(new Date());
       
-      console.log('🔄 Maintenance cycle completed at', new Date().toLocaleTimeString());
+      // Log maintenance completion
+      const completionTime = new Date().toLocaleTimeString();
+      await fetch('/api/activity-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: `Maintenance cycle completed successfully at ${completionTime}`,
+          type: 'maintenance'
+        })
+      });
+      
+      console.log('🔄 Maintenance cycle completed at', completionTime);
     } catch (error) {
       console.error('❌ Maintenance cycle failed:', error);
+      
+      // Log maintenance failure
+      await fetch('/api/activity-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: `Maintenance cycle failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          type: 'system'
+        })
+      });
     }
   };
 
