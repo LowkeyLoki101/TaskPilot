@@ -20,8 +20,7 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
                 alt="Emergent Intelligence" 
                 className="h-10 object-contain"
                 style={{ 
-                  mixBlendMode: 'multiply',
-                  filter: 'contrast(1.2) brightness(1.1)'
+                  filter: 'invert(1) brightness(0) saturate(100%) contrast(1.2)'
                 }}
               />
               <div>

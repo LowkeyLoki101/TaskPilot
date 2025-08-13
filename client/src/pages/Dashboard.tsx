@@ -465,8 +465,7 @@ export default function Dashboard() {
                     alt="Emergent Intelligence" 
                     className="h-8 object-contain"
                     style={{ 
-                      mixBlendMode: 'multiply',
-                      filter: 'contrast(1.2) brightness(1.1)'
+                      filter: 'invert(1) brightness(0) saturate(100%) contrast(1.2)'
                     }}
                   />
                 </div>
