@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import Header from "@/components/Header";
-import Sidebar from "@/components/Sidebar";
+
 import MindMap from "@/components/MindMap";
 import TaskDetailPanel from "@/components/TaskDetailPanel";
 import VoiceModal from "@/components/VoiceModal";
@@ -26,7 +26,7 @@ import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, M
 import { Switch } from "@/components/ui/switch";
 
 export default function Dashboard() {
-  const [currentView, setCurrentView] = useState<'mindmap' | 'list' | 'calendar'>('mindmap');
+
   const [currentModule, setCurrentModule] = useState<'mindmap' | 'calendar' | 'tasks' | 'browser' | 'media' | 'diagnostics'>('mindmap');
   const [mobileTab, setMobileTab] = useState<'today' | 'inbox' | 'projects'>('today');
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
