@@ -213,45 +213,7 @@ export default function CalendarView({ projectId, onTaskSelect }: CalendarViewPr
         </div>
       </div>
 
-      {/* Today's Tasks Sidebar - Hidden in compact view */}
-      <div className="hidden xl:block w-80 border-l p-4 absolute right-0 top-0 h-full bg-background">
-        <div className="flex items-center gap-2 mb-4">
-          <Calendar className="h-4 w-4" />
-          <h3 className="font-medium">Today's Tasks</h3>
-        </div>
-        <ScrollArea className="h-[calc(100%-60px)]">
-          {tasks.filter(task => {
-            const today = new Date().toISOString().split('T')[0];
-            return task.dueDate?.split('T')[0] === today;
-          }).map((task) => (
-            <Card 
-              key={task.id} 
-              className="mb-2 cursor-pointer hover:bg-muted/50 transition-colors"
-              onClick={() => onTaskSelect(task.id)}
-              data-testid={`today-task-${task.id}`}
-            >
-              <CardContent className="p-3">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium">{task.title}</h4>
-                    {task.description && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {task.description}
-                      </p>
-                    )}
-                  </div>
-                  <Badge 
-                    variant={task.priority === "high" ? "destructive" : "default"} 
-                    className="text-xs"
-                  >
-                    {task.priority}
-                  </Badge>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </ScrollArea>
-      </div>
+
     </div>
   );
 }
