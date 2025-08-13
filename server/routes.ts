@@ -329,18 +329,27 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
     }
   });
 
-  // Voice Processing - AI-powered intelligent voice command handling
+  // Voice Processing - AI-powered intelligent voice command handling  
   app.post("/api/voice/process", async (req, res) => {
     try {
-      const { text } = req.body;
+      const { text, projectId = 'default-project' } = req.body;
       if (!text || typeof text !== 'string') {
         return res.status(400).json({ error: "Text input required" });
       }
+
+      // Save user's voice input to chat
+      const userMessage = await storage.createChatMessage({
+        content: text,
+        role: "user",
+        projectId: projectId,
+        userId: "mock-user-id"
+      });
 
       // Use AI to intelligently process the voice input
       const aiAnalysis = await processVoiceIntelligently(text);
       
       let result: any = { action: aiAnalysis.action };
+      let chatResponse = "";
 
       if (aiAnalysis.action === 'TASK_CREATE') {
         // Auto-create task with AI-determined properties
@@ -349,7 +358,7 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
           description: "",
           status: "todo",
           priority: aiAnalysis.priority || 'medium',
-          projectId: 'default-project'
+          projectId: projectId
         });
         
         result = {
@@ -357,6 +366,8 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
           task: task,
           message: `Task "${task.title}" created automatically with AI organization`
         };
+        
+        chatResponse = `✅ I created the task "${task.title}" for you with ${aiAnalysis.priority || 'medium'} priority. You can find it in your task list.`;
         
       } else if (aiAnalysis.action === 'WORKFLOW_CREATE') {
         // Generate workflow using AI
@@ -374,18 +385,23 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
             },
             message: `Workflow "${aiAnalysis.title}" created and ready to execute`
           };
+          
+          chatResponse = `🔄 I created a workflow "${aiAnalysis.title || 'AI Generated Workflow'}" for you. It's ready to execute with the tools you need.`;
+          
         } catch (error) {
           console.error("Workflow generation error:", error);
+          chatResponse = "I understand you want to create a workflow, but I need more specific details about the steps involved.";
           result = {
             action: 'question_answered',
-            response: "I understand you want to create a workflow, but I need more specific details about the steps involved."
+            response: chatResponse
           };
         }
         
       } else if (aiAnalysis.action === 'QUESTION') {
+        chatResponse = aiAnalysis.response || "I'm here to help you manage tasks and workflows. What would you like to do?";
         result = {
           action: 'question_answered',
-          response: aiAnalysis.response || "I'm here to help you manage tasks and workflows. What would you like to do?"
+          response: chatResponse
         };
         
       } else {
@@ -395,15 +411,30 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
           description: "Created via voice input",
           status: "todo",
           priority: 'medium',
-          projectId: 'default-project'
+          projectId: projectId
         });
         
+        chatResponse = `✅ I created a task from your voice input: "${task.title}". You can find it in your task list.`;
         result = {
           action: 'task_created',
           task: task,
           message: "Created task from your voice input"
         };
       }
+
+      // Save AI response to chat so user can see what happened
+      const assistantMessage = await storage.createChatMessage({
+        content: chatResponse,
+        role: "assistant",
+        projectId: projectId,
+        metadata: JSON.stringify([result])
+      });
+
+      // Broadcast to WebSocket clients
+      broadcastToProject(projectId, {
+        type: "voice_processed",
+        data: { userMessage, assistantMessage, result }
+      });
 
       res.json(result);
     } catch (error) {
