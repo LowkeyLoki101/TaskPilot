@@ -19,6 +19,10 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
                 src={logoPath} 
                 alt="Emergent Intelligence" 
                 className="h-10 object-contain"
+                style={{ 
+                  mixBlendMode: 'multiply',
+                  filter: 'contrast(1.2) brightness(1.1)'
+                }}
               />
               <div>
                 <p className="text-sm text-muted-foreground">AI Task Manager</p>

@@ -464,6 +464,10 @@ export default function Dashboard() {
                     src={logoPath} 
                     alt="Emergent Intelligence" 
                     className="h-8 object-contain"
+                    style={{ 
+                      mixBlendMode: 'multiply',
+                      filter: 'contrast(1.2) brightness(1.1)'
+                    }}
                   />
                 </div>
                 <div className="flex items-center space-x-3">
