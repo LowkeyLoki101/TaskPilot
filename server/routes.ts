@@ -11,6 +11,11 @@ import { storage } from "./storage";
 import { activityLogger } from "./activityLogger";
 import { featureRequestSystem } from "./featureRequestSystem";
 import { workstationOrganManager } from "./workstationOrgans";
+import { MemoryService } from "./memoryService";
+import { ToolRegistryService } from "./toolRegistryService";
+import { db } from "./db";
+import { advancedFeatureProposals } from "@shared/schema";
+import { eq, desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -424,6 +429,124 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Memory System Routes
+  app.get("/api/memory/stats", async (req, res) => {
+    try {
+      const stats = await MemoryService.getFullStats();
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching memory stats:", error);
+      res.status(500).json({ error: "Failed to fetch memory stats" });
+    }
+  });
+
+  app.post("/api/memory/archive", async (req, res) => {
+    try {
+      // Trigger manual archival process
+      await MemoryService.stm.processDecay();
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error archiving memory:", error);
+      res.status(500).json({ error: "Failed to archive memory" });
+    }
+  });
+
+  app.post("/api/memory/clear-stm", async (req, res) => {
+    try {
+      MemoryService.stm.clear();
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error clearing STM:", error);
+      res.status(500).json({ error: "Failed to clear STM" });
+    }
+  });
+
+  // Tool Registry Routes
+  app.get("/api/tools", async (req, res) => {
+    try {
+      const tools = await ToolRegistryService.getActiveTools();
+      res.json(tools);
+    } catch (error) {
+      console.error("Error fetching tools:", error);
+      res.status(500).json({ error: "Failed to fetch tools" });
+    }
+  });
+
+  app.get("/api/tools/:toolId/history", async (req, res) => {
+    try {
+      const history = await ToolRegistryService.getExecutionHistory(
+        req.params.toolId,
+        parseInt(req.query.limit as string) || 50
+      );
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching tool history:", error);
+      res.status(500).json({ error: "Failed to fetch tool history" });
+    }
+  });
+
+  app.post("/api/tools/execute", async (req, res) => {
+    try {
+      const { toolId, input, userId, taskId } = req.body;
+      const result = await ToolRegistryService.executeTool(
+        toolId,
+        input,
+        userId,
+        taskId
+      );
+      res.json(result);
+    } catch (error) {
+      console.error("Error executing tool:", error);
+      res.status(500).json({ error: "Failed to execute tool" });
+    }
+  });
+
+  // Feature Proposals Routes
+  app.get("/api/feature-proposals", async (req, res) => {
+    try {
+      const proposals = await db.select()
+        .from(advancedFeatureProposals)
+        .orderBy(desc(advancedFeatureProposals.createdAt));
+      res.json(proposals);
+    } catch (error) {
+      console.error("Error fetching feature proposals:", error);
+      res.status(500).json({ error: "Failed to fetch feature proposals" });
+    }
+  });
+
+  app.post("/api/feature-proposals/:id/feedback", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { decision, feedback } = req.body;
+      
+      const status = decision === 'approved' ? 'approved' : 'denied';
+      
+      await db.update(advancedFeatureProposals)
+        .set({
+          status,
+          userFeedback: feedback,
+          updatedAt: new Date(),
+        })
+        .where(eq(advancedFeatureProposals.id, id));
+
+      // Record this decision in memory for learning
+      await MemoryService.recordEvent(
+        'FEATURE_PROPOSAL_DECISION',
+        {
+          proposalId: id,
+          decision,
+          feedback,
+        },
+        `User ${decision} feature proposal with feedback`
+      );
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating feature proposal:", error);
+      res.status(500).json({ error: "Failed to update feature proposal" });
+    }
+  });
+
   // Health Check
   app.get("/api/health", (req, res) => {
     res.json({
@@ -434,7 +557,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         websocket: "active",
         ai: "available",
         youtube: "available",
-        workstation: "ready"
+        workstation: "ready",
+        memory: "active",
+        toolRegistry: "active"
       },
       organs: {
         total: workstationOrganManager.getAllOrgans().length,

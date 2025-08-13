@@ -47,6 +47,18 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 - **Workflow Generation**: Natural language to FlowScript conversion
 - **AI Workflow Engine**: Automated execution with debugging
 - **Autonomous AI Workstation**: Three-tier autonomy system (Manual, Semi, Full) with modular center pane and self-maintenance loops.
+- **Advanced Memory System**: 
+  - Short-Term Memory (STM) with decay mechanisms and automatic archival
+  - Long-Term Memory (LTM) with knowledge graph relationships
+  - Pattern recognition and learning from user interactions
+- **Tool Registry**: 
+  - Dynamic tool management with performance tracking
+  - Sandboxed execution with retry logic
+  - External API integration support
+- **Feature Proposal System**: 
+  - AI-generated improvement suggestions
+  - User approval/denial workflow with feedback learning
+  - Code generation and technical specifications
 
 ### Data Models
 - **Users**: Authentication, profiles
@@ -66,6 +78,15 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 - **Layouts**: Aviation-themed three-pane layout for workflow composer, two-pane (Workspace | AI Inspector) for main interface.
 - **UI Control**: Comprehensive DiagnosticsPanel for system monitoring, UI control, and autonomous system management.
 - **Workflow Mind Map**: Project-centered orchestration hub with "Tools" toggle and sequential "Steps" system.
+
+## Recent Architectural Changes (August 2025)
+
+### Production-Ready Advanced Features
+- **Memory Management Service**: Implemented multi-tier memory architecture with STM/LTM, decay mechanisms, and automatic archival
+- **Tool Registry Service**: Created comprehensive tool management system with performance tracking, retry logic, and sandboxed execution
+- **Feature Proposal System**: Built AI-driven feature suggestion system with approval workflows and feedback learning
+- **Database Extensions**: Added tables for long-term memory, memory relationships, tool registry, tool executions, and feature proposals
+- **UI Components**: Developed MemoryStats and FeatureProposals components for system monitoring and feature management
 
 ## External Dependencies
 
