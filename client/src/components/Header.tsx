@@ -1,6 +1,7 @@
 import { Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-// Using the SVG logo for better integration with the header
+import LogoEmergent from "./LogoEmergent";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HeaderProps {
   onVoiceToggle: () => void;
@@ -8,34 +9,14 @@ interface HeaderProps {
 }
 
 export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
+  const isMobile = useIsMobile();
+  
   return (
     <header className="bg-card border-b border-border sticky top-0 z-50">
       <div className="max-w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
-          <div className="flex items-center space-x-3 max-w-[50%] sm:max-w-none">
-            <div className="flex items-center">
-              <img 
-                src="/Emergent Intelligence Logo.svg" 
-                alt="Emergent Intelligence" 
-                className="h-8 sm:h-10 w-auto object-contain"
-                style={{
-                  filter: 'brightness(0) saturate(100%) invert(70%) sepia(30%) saturate(3000%) hue-rotate(180deg) brightness(95%) contrast(95%)'
-                }}
-              />
-            </div>
-            <div className="hidden sm:block">
-              <p className="text-sm font-semibold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                Emergent Intelligence
-              </p>
-              <p className="text-xs text-muted-foreground">AI Task Management</p>
-            </div>
-            <div className="block sm:hidden">
-              <p className="text-xs font-semibold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                Emergent
-              </p>
-            </div>
-          </div>
+          <LogoEmergent size={isMobile ? 'sm' : 'md'} />
 
           {/* Voice Controls and Actions */}
           <div className="flex items-center space-x-2 sm:space-x-4">
