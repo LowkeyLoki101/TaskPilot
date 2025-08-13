@@ -139,7 +139,7 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(chatMessages)
       .where(eq(chatMessages.projectId, projectId))
-      .orderBy(desc(chatMessages.createdAt));
+      .orderBy(chatMessages.createdAt); // Ascending order - oldest first, newest at bottom
   }
 
   async createChatMessage(insertMessage: InsertChatMessage): Promise<ChatMessage> {
