@@ -1,3 +1,6 @@
+import { Mic, MicOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
 interface HeaderProps {
   onVoiceToggle: () => void;
   isVoiceActive: boolean;
@@ -35,13 +38,22 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
             </div>
             
             {/* Voice Control Button */}
-            <button 
+            <Button 
               onClick={onVoiceToggle}
-              className={`${isVoiceActive ? 'bg-secondary hover:bg-secondary-600' : 'bg-primary hover:bg-primary-600'} text-white p-3 rounded-lg transition-colors duration-200`}
+              variant={isVoiceActive ? "secondary" : "default"}
+              size="lg"
+              className={`${isVoiceActive ? 'bg-red-600 hover:bg-red-700' : 'bg-primary hover:bg-primary/90'} text-white shadow-lg`}
               data-testid="button-voice-toggle"
             >
-              <i className="fas fa-microphone text-lg"></i>
-            </button>
+              {isVoiceActive ? (
+                <MicOff className="h-5 w-5" />
+              ) : (
+                <Mic className="h-5 w-5" />
+              )}
+              <span className="ml-2 font-medium">
+                {isVoiceActive ? 'Stop' : 'Voice'}
+              </span>
+            </Button>
 
             {/* User Menu */}
             <div className="relative">
