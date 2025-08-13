@@ -13,9 +13,9 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-3">
-            {/* Original SVG logo with transparent background */}
+            {/* Using original PNG logo until SVG is restored */}
             <img 
-              src="/Emergent Intelligence Logo.svg" 
+              src="/emergent-logo-original.png" 
               alt="Emergent Intelligence" 
               className="h-8 sm:h-10 w-auto object-contain"
             />
