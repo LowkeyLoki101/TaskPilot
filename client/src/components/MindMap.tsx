@@ -327,7 +327,7 @@ export default function MindMap({ projectId, onTaskSelect }: MindMapProps) {
       </div>
 
       {/* Minimap */}
-      <div className="absolute top-4 right-4 w-48 h-32 bg-card border border-border rounded-lg overflow-hidden">
+      <div className="absolute top-4 right-4 w-24 h-16 bg-card border border-border rounded-lg overflow-hidden">
         <div className="w-full h-full bg-gradient-to-br from-card to-background relative">
           <div className="absolute inset-0 bg-primary bg-opacity-20 border border-primary rounded"></div>
           <span className="absolute bottom-2 left-2 text-xs text-muted-foreground">
