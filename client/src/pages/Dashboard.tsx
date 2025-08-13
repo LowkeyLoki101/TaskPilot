@@ -28,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download } from "lucide-react";
+import logoPath from "@assets/IMG_3516_1755107002245.jpg";
 import { Switch } from "@/components/ui/switch";
 
 export default function Dashboard() {
@@ -464,8 +465,11 @@ export default function Dashboard() {
               {/* Left Section - Title and AI Status */}
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
-                  <Brain className="h-5 w-5 text-primary" />
-                  <h2 className="text-lg font-semibold text-foreground">Emergent Intelligence</h2>
+                  <img 
+                    src={logoPath} 
+                    alt="Emergent Intelligence" 
+                    className="h-8 object-contain"
+                  />
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center space-x-2 text-sm">

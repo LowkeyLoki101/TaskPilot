@@ -1,5 +1,6 @@
 import { Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import logoPath from "@assets/IMG_3516_1755107002245.jpg";
 
 interface HeaderProps {
   onVoiceToggle: () => void;
@@ -14,11 +15,12 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
           {/* Logo and Brand */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 gradient-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">EI</span>
-              </div>
+              <img 
+                src={logoPath} 
+                alt="Emergent Intelligence" 
+                className="h-10 object-contain"
+              />
               <div>
-                <h1 className="text-xl font-semibold text-foreground">Emergent Intelligence</h1>
                 <p className="text-sm text-muted-foreground">AI Task Manager</p>
               </div>
             </div>
