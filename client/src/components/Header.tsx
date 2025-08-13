@@ -12,36 +12,21 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
       <div className="max-w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
-          <div className="flex items-center space-x-2 sm:space-x-3">
-            {/* Logo Container with subtle background */}
-            <div className="relative group">
-              {/* Subtle glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
-              
-              {/* Original SVG logo - inverted to work on light/dark backgrounds */}
-              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-700 rounded-md p-1">
-                <img 
-                  src="/Emergent Intelligence Logo.svg" 
-                  alt="Emergent Intelligence" 
-                  className="h-7 sm:h-9 w-auto object-contain"
-                  style={{
-                    filter: 'brightness(1.1) contrast(1.1)',
-                  }}
-                />
-              </div>
-            </div>
+          <div className="flex items-center space-x-3">
+            {/* Original SVG logo with transparent background */}
+            <img 
+              src="/Emergent Intelligence Logo.svg" 
+              alt="Emergent Intelligence" 
+              className="h-8 sm:h-10 w-auto object-contain"
+            />
             
-            {/* Text Branding */}
-            <div className="flex flex-col">
-              <span className="text-sm sm:text-base font-bold tracking-wide text-foreground hidden sm:block">
+            {/* Text Branding - simple, no colors */}
+            <div className="hidden sm:flex flex-col">
+              <span className="text-sm font-bold tracking-wide text-foreground">
                 EMERGENT
               </span>
-              <span className="text-xs tracking-widest text-muted-foreground hidden sm:block">
+              <span className="text-xs tracking-widest text-muted-foreground">
                 INTELLIGENCE
-              </span>
-              {/* Mobile abbreviated version */}
-              <span className="text-xs font-bold text-foreground sm:hidden">
-                EMERGENT
               </span>
             </div>
           </div>
