@@ -1,7 +1,5 @@
 import { Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import LogoEmergent from "./LogoEmergent";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HeaderProps {
   onVoiceToggle: () => void;
@@ -9,14 +7,44 @@ interface HeaderProps {
 }
 
 export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
-  const isMobile = useIsMobile();
-  
   return (
     <header className="bg-card border-b border-border sticky top-0 z-50">
       <div className="max-w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
-          <LogoEmergent size={isMobile ? 'sm' : 'md'} />
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            {/* Logo Container with subtle background */}
+            <div className="relative group">
+              {/* Subtle glow effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded blur-md opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              
+              {/* Original SVG logo - inverted to work on light/dark backgrounds */}
+              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 dark:from-slate-800 dark:to-slate-700 rounded-md p-1">
+                <img 
+                  src="/Emergent Intelligence Logo.svg" 
+                  alt="Emergent Intelligence" 
+                  className="h-7 sm:h-9 w-auto object-contain"
+                  style={{
+                    filter: 'brightness(1.1) contrast(1.1)',
+                  }}
+                />
+              </div>
+            </div>
+            
+            {/* Text Branding */}
+            <div className="flex flex-col">
+              <span className="text-sm sm:text-base font-bold tracking-wide text-foreground hidden sm:block">
+                EMERGENT
+              </span>
+              <span className="text-xs tracking-widest text-muted-foreground hidden sm:block">
+                INTELLIGENCE
+              </span>
+              {/* Mobile abbreviated version */}
+              <span className="text-xs font-bold text-foreground sm:hidden">
+                EMERGENT
+              </span>
+            </div>
+          </div>
 
           {/* Voice Controls and Actions */}
           <div className="flex items-center space-x-2 sm:space-x-4">
