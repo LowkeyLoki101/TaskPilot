@@ -163,15 +163,16 @@ export default function CalendarView({ projectId, onTaskSelect }: CalendarViewPr
           {/* Calendar days */}
           {calendarDays.map((day, index) => {
             if (day === null) {
-              return <div key={index} className="p-1 min-h-[100px]" />;
+              return <div key={`empty-${index}`} className="p-1 min-h-[100px]" />;
             }
             
             const dayTasks = getTasksForDate(day);
             const isCurrentDay = isToday(day);
+            const uniqueKey = `${currentYear}-${currentMonth}-${day}`;
             
             return (
               <Card 
-                key={day} 
+                key={uniqueKey} 
                 className={`p-1 min-h-[100px] ${isCurrentDay ? 'ring-2 ring-primary' : ''}`}
                 data-testid={`calendar-day-${day}`}
               >
@@ -181,9 +182,9 @@ export default function CalendarView({ projectId, onTaskSelect }: CalendarViewPr
                   </div>
                 </CardHeader>
                 <CardContent className="p-1 space-y-1">
-                  {dayTasks.slice(0, 3).map((task) => (
+                  {dayTasks.slice(0, 3).map((task, taskIndex) => (
                     <div
-                      key={task.id}
+                      key={`${uniqueKey}-task-${task.id}-${taskIndex}`}
                       className="text-xs p-1 rounded cursor-pointer hover:bg-muted/50 transition-colors truncate"
                       onClick={() => onTaskSelect(task.id)}
                       data-testid={`task-${task.id}`}

@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AIControlPanel } from "@/components/AIControlPanel";
+import { DiagnosticsPanel } from "./DiagnosticsPanel";
 import { 
   Brain, 
   Settings, 
@@ -20,7 +21,8 @@ import {
   User,
   Tag,
   AlertCircle,
-  Edit
+  Edit,
+  Bug
 } from "lucide-react";
 
 interface InspectorPaneProps {
@@ -80,7 +82,7 @@ export function InspectorPane({ selectedTaskId, className }: InspectorPaneProps)
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <div className="px-4 pt-2">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="ai" className="text-xs">
               <Brain className="h-3 w-3 mr-1" />
               AI
@@ -92,6 +94,10 @@ export function InspectorPane({ selectedTaskId, className }: InspectorPaneProps)
             <TabsTrigger value="activity" className="text-xs">
               <Activity className="h-3 w-3 mr-1" />
               Activity
+            </TabsTrigger>
+            <TabsTrigger value="diagnostics" className="text-xs">
+              <Bug className="h-3 w-3 mr-1" />
+              Debug
             </TabsTrigger>
           </TabsList>
         </div>
@@ -279,6 +285,12 @@ export function InspectorPane({ selectedTaskId, className }: InspectorPaneProps)
                 </div>
               </div>
             </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="diagnostics" className="h-full mt-0">
+            <div className="h-full p-4">
+              <DiagnosticsPanel />
+            </div>
           </TabsContent>
         </div>
       </Tabs>
