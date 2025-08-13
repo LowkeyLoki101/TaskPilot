@@ -283,11 +283,10 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
         // Auto-create task with AI-determined properties
         const task = await storage.createTask({
           title: aiAnalysis.title || text,
-          tags: aiAnalysis.tags || [],
+          description: "",
+          status: "todo",
           priority: aiAnalysis.priority || 'medium',
-          projectId: 'default-project',
-          userId: 'mock-user-id',
-          completed: false
+          projectId: 'default-project'
         });
         
         result = {
@@ -330,11 +329,10 @@ Format: { "message": "human response", "functions": [{"name": "function_name", "
         // Default to task creation if unclear
         const task = await storage.createTask({
           title: text.substring(0, 100), // Limit title length
-          tags: ['voice-input'],
+          description: "Created via voice input",
+          status: "todo",
           priority: 'medium',
-          projectId: 'default-project', 
-          userId: 'mock-user-id',
-          completed: false
+          projectId: 'default-project'
         });
         
         result = {

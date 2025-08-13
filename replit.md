@@ -44,9 +44,10 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 - **Environment Variables**: Secure configuration management for API keys and credentials
 
 ### AI Integration
-- **Core AI Service**: OpenAI GPT-5 for advanced task generation and natural language processing
+- **Dual-Model Architecture**: GPT-4o for real-time voice interactions, GPT-5 for logic/management tasks
+- **Voice Processing**: GPT-4o optimized for real-time speech recognition and immediate response
+- **Management & Logic**: GPT-5 for advanced reasoning, task generation, and complex workflow creation
 - **Enhanced AI Assistant**: Complete website control system with full automation capabilities
-- **Voice Processing**: Web Speech API for browser-based voice recognition
 - **Function Calling**: Structured AI responses for task creation and management
 - **Website Control**: AI can modify any UI element, create/manage tasks, send notifications, search web, customize themes
 - **Context Awareness**: Project-specific AI assistance with conversation history
