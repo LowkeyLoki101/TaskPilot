@@ -133,13 +133,13 @@ export function FeatureRequestPanel({ className }: FeatureRequestPanelProps) {
   }
 
   return (
-    <div className={`h-full flex flex-col ${className}`}>
+    <div className={`h-full flex flex-col overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="p-4 border-b border-border bg-background/95">
+      <div className="p-3 border-b border-border bg-background/95 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Lightbulb className="h-5 w-5 text-primary" />
-            <h3 className="font-semibold">Feature Requests</h3>
+            <Lightbulb className="h-4 w-4 text-primary" />
+            <h3 className="font-medium text-sm">Feature Requests</h3>
           </div>
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="text-xs">
@@ -150,11 +150,11 @@ export function FeatureRequestPanel({ className }: FeatureRequestPanelProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex min-h-0">
         {/* Request List */}
-        <div className="w-1/2 border-r border-border">
-          <ScrollArea className="h-full">
-            <div className="p-4 space-y-3">
+        <div className="w-1/2 border-r border-border flex flex-col">
+          <ScrollArea className="flex-1">
+            <div className="p-3 space-y-2">
               {featureRequests.map((request) => {
                 const CategoryIcon = getCategoryIcon(request.category);
                 
@@ -215,10 +215,10 @@ export function FeatureRequestPanel({ className }: FeatureRequestPanelProps) {
         </div>
 
         {/* Request Detail */}
-        <div className="w-1/2">
+        <div className="w-1/2 flex flex-col">
           {selectedRequest ? (
-            <ScrollArea className="h-full">
-              <div className="p-4 space-y-4">
+            <ScrollArea className="flex-1">
+              <div className="p-3 space-y-3">
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold">{selectedRequest.title}</h3>
@@ -348,10 +348,10 @@ export function FeatureRequestPanel({ className }: FeatureRequestPanelProps) {
               </div>
             </ScrollArea>
           ) : (
-            <div className="h-full flex items-center justify-center">
+            <div className="flex-1 flex items-center justify-center">
               <div className="text-center text-muted-foreground">
-                <Lightbulb className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>Select a feature request to view details</p>
+                <Lightbulb className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Select a feature request to view details</p>
               </div>
             </div>
           )}

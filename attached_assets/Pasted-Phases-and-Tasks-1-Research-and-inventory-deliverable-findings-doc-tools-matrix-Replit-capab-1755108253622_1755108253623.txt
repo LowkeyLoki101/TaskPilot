@@ -1,0 +1,48 @@
+Phases and Tasks
+1) Research and inventory (deliverable: findings doc + tools matrix)
+- Replit capabilities/constraints: Secrets, Deployments, networking, WebSocket/WebRTC, storage options, logs/monitoring.
+- Replit integrations: ReplAuth, package management (Nix/pip/npm), build/ports.
+- OpenAI capabilities: Responses API, Assistants, Realtime, Embeddings, Images, Audio (STT/TTS), Moderations, Files/Vector stores, Batch, Fine-tuning; model options and pricing.
+- Identify useful vs not-needed for this webapp; produce a tools matrix.
+
+2) Architecture and security
+- Key management via Replit Secrets; server-only API calls; optional proxy.
+- Decide SDK (Node or Python) and base models; map quotas and rate limits.
+- Data layer: choose external DB/vector store (e.g., Supabase/Neon + pgvector) vs simple in-repl storage; retention policy and PII.
+- Observability: request/response logs (redaction), latency and cost metrics.
+
+3) Backend implementation
+- Install OpenAI SDK; create health-check route; add basic Responses API call with streaming.
+- Tool calling: map assistant tool calls to app actions (create task, schedule event, send email/SMS) with strict schemas.
+- Moderation endpoint for user-generated text and outbound content.
+- Embeddings service and indexer for tasks/projects; search endpoint.
+- Optional: Files/vector-store wiring for Assistants retrieval.
+- Caching and retry policy; error taxonomy.
+
+4) Frontend integration
+- Chat UI with streaming; display tool-call results; inline citations if using retrieval.
+- Settings: model selector, temperature; usage meter.
+- Error states and fallbacks.
+
+5) Testing and eval
+- Unit and integration tests; prompt regression tests; red-teaming for jailbreak/protected actions.
+- Load test and rate-limit behavior.
+
+6) Deployment on Replit
+- Replit Deployments config (Autoscale vs Reserved VM), secrets injection, build/run commands.
+- Logging, monitoring, and rollback plan; usage alerts.
+
+7) Documentation and handoff
+- Runbook, keys/secrets, model list, cost controls, and future extensions.
+
+8) Nice-to-haves (optional)
+- Realtime voice (if networking allows); TTS for read-outs; STT for voice-to-task.
+- Images (DALL·E) if you need visuals; Batch for nightly analytics summaries.
+
+Initial take on “useful tools in this webapp” (to be validated by research)
+- Very useful: Responses API with tool calling; streaming; Moderations; Embeddings for semantic task search; Files/vector store if you want retrieval over docs; Assistants if you prefer managed orchestration.
+- Maybe useful: Realtime (voice) if you want live talk-to-app; Audio STT for voicemail-to-task; TTS for voice readouts.
+- Usually not needed: Images and Fine-tuning (unless you have a narrow domain or need visuals).
+
+I’m starting the research now and will post a findings document and a tools matrix into the project. Please confirm your backend language (Node.js or Python) and whether you’ll use Replit Deployments so I can finalize SDK-specific steps.
+
