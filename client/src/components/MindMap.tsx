@@ -155,7 +155,7 @@ export default function MindMap({ projectId, onTaskSelect }: MindMapProps) {
       .attr("dy", "10")
       .attr("fill", "rgba(255,255,255,0.8)")
       .attr("font-size", "12")
-      .text(d => d.description);
+      .text(d => d.type === "central" ? d.description : "");
 
     // Task nodes
     const taskNodes = nodes.filter(d => d.type === "task");
@@ -199,13 +199,14 @@ export default function MindMap({ projectId, onTaskSelect }: MindMapProps) {
       .attr("y", 5)
       .attr("fill", "hsl(215, 20%, 65%)")
       .attr("font-size", "12")
-      .text(d => d.dueDate ? `Due: ${new Date(d.dueDate).toLocaleDateString()}` : "No due date");
+      .text(d => d.type === "task" && d.dueDate ? `Due: ${new Date(d.dueDate).toLocaleDateString()}` : "No due date");
 
     // Priority indicators
     taskNodes.append("text")
       .attr("x", -60)
       .attr("y", 25)
       .attr("fill", d => {
+        if (d.type !== "task") return "#10B981";
         switch (d.priority) {
           case "high": return "#EF4444";
           case "medium": return "#F59E0B";
@@ -214,7 +215,7 @@ export default function MindMap({ projectId, onTaskSelect }: MindMapProps) {
       })
       .attr("font-size", "10")
       .attr("font-weight", "600")
-      .text(d => d.priority.toUpperCase());
+      .text(d => d.type === "task" ? d.priority.toUpperCase() : "");
 
     // Click handlers
     taskNodes.on("click", (event, d) => {
