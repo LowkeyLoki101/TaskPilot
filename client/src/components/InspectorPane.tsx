@@ -22,8 +22,10 @@ import {
   Tag,
   AlertCircle,
   Edit,
-  Bug
+  Bug,
+  Lightbulb
 } from "lucide-react";
+import { FeatureRequestPanel } from "./FeatureRequestPanel";
 
 interface InspectorPaneProps {
   selectedTaskId?: string | null;
@@ -95,7 +97,7 @@ export function InspectorPane({
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <div className="px-4 pt-2">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="ai" className="text-xs">
               <Brain className="h-3 w-3 mr-1" />
               AI
@@ -103,6 +105,10 @@ export function InspectorPane({
             <TabsTrigger value="task" className="text-xs">
               <FileText className="h-3 w-3 mr-1" />
               Task
+            </TabsTrigger>
+            <TabsTrigger value="feature" className="text-xs">
+              <Lightbulb className="h-3 w-3 mr-1" />
+              Feature
             </TabsTrigger>
             <TabsTrigger value="activity" className="text-xs">
               <Activity className="h-3 w-3 mr-1" />
@@ -298,6 +304,10 @@ export function InspectorPane({
                 </div>
               </div>
             </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="feature" className="h-full mt-0">
+            <FeatureRequestPanel className="h-full" />
           </TabsContent>
 
           <TabsContent value="diagnostics" className="h-full mt-0">

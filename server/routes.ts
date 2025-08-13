@@ -1,163 +1,66 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
-import { storage } from "./storage";
-import OpenAI from "openai";
-import { 
-  insertProjectSchema, 
-  insertTaskSchema, 
+import {
+  insertTaskSchema,
   insertCommentSchema,
-  insertChatMessageSchema 
+  insertChatMessageSchema
 } from "@shared/schema";
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
-import { ObjectPermission } from "./objectAcl";
-import { aiAssistant } from "./aiAssistant";
-import { generateWorkflowFromPrompt } from "./openai";
-import { YouTubeService } from "./youtube";
+import { storage } from "./storage";
 import { activityLogger } from "./activityLogger";
-
-// AI Voice Processing - Intelligent voice command handling
-async function processVoiceIntelligently(text: string) {
-  const prompt = `Analyze this voice input and determine the appropriate action:
-
-Voice Input: "${text}"
-
-Classify as one of:
-1. TASK_CREATE - User wants to create a task/todo item
-2. WORKFLOW_CREATE - User wants to create a workflow/process 
-3. QUESTION - User is asking a question
-4. COMMAND - User wants to execute an action
-
-For TASK_CREATE, extract:
-- title (clear, actionable task name)
-- tags (relevant categorization)
-- priority (low/medium/high/urgent based on urgency words)
-
-For WORKFLOW_CREATE, identify:
-- workflow type and steps
-- tools needed
-
-For QUESTION/COMMAND, provide appropriate response.
-
-Respond with JSON only:
-{
-  "action": "TASK_CREATE|WORKFLOW_CREATE|QUESTION|COMMAND",
-  "title": "extracted title",
-  "tags": ["tag1", "tag2"],
-  "priority": "medium",
-  "response": "response text if question",
-  "workflow_request": "workflow description if workflow"
-}`;
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user  
-      messages: [{ role: "user", content: prompt }],
-      response_format: { type: "json_object" },
-      temperature: 0.3
-    });
-
-    return JSON.parse(response.choices[0].message.content || "{}");
-  } catch (error) {
-    console.error("AI processing error:", error);
-    throw new Error("Failed to process voice input");
-  }
-}
-
-// Using GPT-5 - the newest OpenAI model released August 7, 2025 with unified reasoning and enhanced capabilities
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key" 
-});
+import { featureRequestSystem } from "./featureRequestSystem";
+import { workstationOrganManager } from "./workstationOrgans";
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Object storage routes for file upload
-  app.post("/api/objects/upload", async (req, res) => {
-    try {
-      const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL });
-    } catch (error) {
-      console.error("Error getting upload URL:", error);
-      res.status(500).json({ error: "Failed to get upload URL" });
-    }
-  });
+  const httpServer = createServer(app);
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  const projectConnections = new Map<string, Set<WebSocket>>();
 
-  // Serve uploaded files
-  app.get("/objects/:objectPath(*)", async (req, res) => {
-    try {
-      const objectStorageService = new ObjectStorageService();
-      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      objectStorageService.downloadObject(objectFile, res);
-    } catch (error) {
-      console.error("Error serving object:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.sendStatus(404);
+  // WebSocket setup
+  wss.on('connection', (ws) => {
+    console.log('WebSocket client connected');
+    
+    ws.on('message', (message: Buffer) => {
+      try {
+        const data = JSON.parse(message.toString());
+        
+        if (data.type === 'join_project' && data.projectId) {
+          if (!projectConnections.has(data.projectId)) {
+            projectConnections.set(data.projectId, new Set());
+          }
+          projectConnections.get(data.projectId)!.add(ws);
+        }
+      } catch (error) {
+        console.error('Error handling WebSocket message:', error);
       }
-      return res.sendStatus(500);
-    }
-  });
+    });
 
-  // AI image generation endpoint
-  app.post("/api/ai/generate-image", async (req, res) => {
-    try {
-      const { enhancedAI } = await import("./openai");
-      const { prompt } = req.body;
-      
-      if (!prompt) {
-        return res.status(400).json({ error: "Prompt is required" });
-      }
-
-      const result = await enhancedAI.generateImage(prompt);
-      res.json(result);
-    } catch (error) {
-      console.error("Error generating image:", error);
-      res.status(500).json({ error: "Failed to generate image" });
-    }
-  });
-
-  // AI image analysis endpoint
-  app.post("/api/ai/analyze-image", async (req, res) => {
-    try {
-      const { enhancedAI } = await import("./openai");
-      const { base64Image } = req.body;
-      
-      if (!base64Image) {
-        return res.status(400).json({ error: "Base64 image is required" });
-      }
-
-      const result = await enhancedAI.analyzeImage(base64Image);
-      res.json({ analysis: result });
-    } catch (error) {
-      console.error("Error analyzing image:", error);
-      res.status(500).json({ error: "Failed to analyze image" });
-    }
-  });
-
-  // Projects
-  app.get("/api/projects", async (req, res) => {
-    try {
-      // For now, using a mock user ID - in real app this would come from auth
-      const projects = await storage.getProjectsByOwner("mock-user-id");
-      res.json(projects);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-      res.status(500).json({ error: "Failed to fetch projects" });
-    }
-  });
-
-  app.post("/api/projects", async (req, res) => {
-    try {
-      const validated = insertProjectSchema.parse(req.body);
-      const project = await storage.createProject({
-        ...validated,
-        ownerId: "mock-user-id" // In real app, get from auth
+    ws.on('close', () => {
+      // Remove connection from all projects
+      projectConnections.forEach((connections, projectId) => {
+        connections.delete(ws);
+        if (connections.size === 0) {
+          projectConnections.delete(projectId);
+        }
       });
-      res.json(project);
-    } catch (error) {
-      console.error("Error creating project:", error);
-      res.status(500).json({ error: "Failed to create project" });
-    }
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
   });
+
+  function broadcastToProject(projectId: string, message: any) {
+    const connections = projectConnections.get(projectId);
+    if (connections) {
+      const messageString = JSON.stringify(message);
+      connections.forEach((ws) => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(messageString);
+        }
+      });
+    }
+  }
 
   // Tasks
   app.get("/api/projects/:projectId/tasks", async (req, res) => {
@@ -174,13 +77,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const validated = insertTaskSchema.parse({
         ...req.body,
-        projectId: req.params.projectId
+        projectId: req.params.projectId,
+        assigneeId: "mock-user-id"
       });
-      const task = await storage.createTask(validated);
-      activityLogger.logTaskAction('Task created', { taskId: task.id, title: task.title, projectId: req.params.projectId });
       
-      // Broadcast to WebSocket clients
-      broadcastToProject(req.params.projectId, {
+      const task = await storage.createTask(validated);
+      activityLogger.logTaskAction('Task created', { taskId: task.id, title: task.title, projectId: task.projectId });
+      
+      broadcastToProject(task.projectId, {
         type: "task_created",
         data: task
       });
@@ -197,7 +101,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const task = await storage.updateTask(req.params.taskId, req.body);
       activityLogger.logTaskAction('Task updated', { taskId: task.id, title: task.title, projectId: task.projectId });
       
-      // Broadcast to WebSocket clients
       broadcastToProject(task.projectId, {
         type: "task_updated",
         data: task
@@ -220,7 +123,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deleteTask(req.params.taskId);
       activityLogger.logTaskAction('Task deleted', { taskId: req.params.taskId, title: task.title, projectId: task.projectId });
       
-      // Broadcast to WebSocket clients
       broadcastToProject(task.projectId, {
         type: "task_deleted",
         data: { id: req.params.taskId }
@@ -243,7 +145,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         activityLogger.logTaskAction('Task deleted (bulk)', { taskId: task.id, title: task.title, projectId: req.params.projectId });
       }
       
-      // Broadcast to WebSocket clients
       broadcastToProject(req.params.projectId, {
         type: "tasks_bulk_deleted",
         data: { count: tasks.length }
@@ -272,7 +173,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validated = insertCommentSchema.parse({
         ...req.body,
         taskId: req.params.taskId,
-        authorId: "mock-user-id" // In real app, get from auth
+        authorId: "mock-user-id"
       });
       const comment = await storage.createComment(validated);
       res.json(comment);
@@ -295,560 +196,240 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/projects/:projectId/chat", async (req, res) => {
     try {
-      const userMessage = insertChatMessageSchema.parse({
+      const validated = insertChatMessageSchema.parse({
         ...req.body,
         projectId: req.params.projectId,
-        userId: "mock-user-id",
-        role: "user"
+        authorId: "mock-user-id"
       });
+      const message = await storage.createChatMessage(validated);
       
-      await storage.createChatMessage(userMessage);
-
-      // Process with OpenAI
-      const response = await openai.chat.completions.create({
-        model: "gpt-5",
-        messages: [
-          {
-            role: "system",
-            content: `You are an AI assistant for a task management system. You can help users:
-1. Create and manage tasks
-2. Schedule events
-3. Send emails and SMS
-4. Search the web for information
-5. Generate subtasks and organize projects
-
-When users request actions, respond with JSON containing both a human-readable message and function calls if needed.
-Format: { "message": "human response", "functions": [{"name": "function_name", "params": {...}}] }`
-          },
-          {
-            role: "user",
-            content: req.body.content
-          }
-        ],
-        response_format: { type: "json_object" }
-      });
-
-      const aiResponse = JSON.parse(response.choices[0].message.content || '{"message": "I apologize, but I encountered an error processing your request."}');
-      
-      const assistantMessage = await storage.createChatMessage({
-        content: aiResponse.message,
-        role: "assistant",
-        projectId: req.params.projectId,
-        metadata: aiResponse.functions ? JSON.stringify(aiResponse.functions) : null
-      });
-
-      // Broadcast to WebSocket clients
       broadcastToProject(req.params.projectId, {
         type: "chat_message",
-        data: assistantMessage
+        data: message
       });
-
-      // Execute function calls if any
-      if (aiResponse.functions) {
-        for (const func of aiResponse.functions) {
-          await executeFunctionCall(func, req.params.projectId);
-        }
-      }
-
-      res.json(assistantMessage);
+      
+      res.json(message);
     } catch (error) {
-      console.error("Error processing chat message:", error);
-      res.status(500).json({ error: "Failed to process chat message" });
+      console.error("Error creating chat message:", error);
+      res.status(500).json({ error: "Failed to create chat message" });
     }
   });
 
-  // Voice Processing - AI-powered intelligent voice command handling  
-  app.post("/api/voice/process", async (req, res) => {
+  // Activity Logs
+  app.get("/api/activity", async (req, res) => {
     try {
-      const { text, projectId = 'default-project' } = req.body;
-      if (!text || typeof text !== 'string') {
-        return res.status(400).json({ error: "Text input required" });
-      }
+      const activities = activityLogger.getActivities();
+      res.json(activities);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      res.status(500).json({ error: "Failed to fetch activities" });
+    }
+  });
 
-      // Save user's voice input to chat
-      const userMessage = await storage.createChatMessage({
-        content: text,
-        role: "user",
-        projectId: projectId,
-        userId: "mock-user-id",
-        metadata: null
-      });
+  // Feature Request System
+  app.get("/api/feature-requests", async (req, res) => {
+    try {
+      const requests = featureRequestSystem.getFeatureRequests();
+      res.json(requests);
+    } catch (error) {
+      console.error("Error fetching feature requests:", error);
+      res.status(500).json({ error: "Failed to fetch feature requests" });
+    }
+  });
 
-      // Use AI to intelligently process the voice input
-      const aiAnalysis = await processVoiceIntelligently(text);
-      
-      let result: any = { action: aiAnalysis.action };
-      let chatResponse = "";
+  app.post("/api/feature-requests", async (req, res) => {
+    try {
+      const request = await featureRequestSystem.generateFeatureRequest(req.body);
+      res.json(request);
+    } catch (error) {
+      console.error("Error creating feature request:", error);
+      res.status(500).json({ error: "Failed to create feature request" });
+    }
+  });
 
-      if (aiAnalysis.action === 'TASK_CREATE') {
-        // Auto-create task with AI-determined properties and position
-        const existingTasks = await storage.getProjectTasks(projectId);
-        const angle = (existingTasks.length * 2 * Math.PI) / (existingTasks.length + 1);
-        const radius = 250;
-        const centerX = 400; // Approximate center
-        const centerY = 300;
-        
-        const task = await storage.createTask({
-          title: aiAnalysis.title || text,
-          description: "",
-          status: "todo",
-          priority: aiAnalysis.priority || 'medium',
-          projectId: projectId,
-          position: {
-            x: centerX + Math.cos(angle) * radius,
-            y: centerY + Math.sin(angle) * radius
-          }
-        });
-        
-        result = {
-          action: 'task_created',
-          task: task,
-          message: `Task "${task.title}" created automatically with AI organization`
-        };
-        
-        chatResponse = `✅ I created the task "${task.title}" for you with ${aiAnalysis.priority || 'medium'} priority. You can find it in your task list.`;
-        
-      } else if (aiAnalysis.action === 'WORKFLOW_CREATE') {
-        // Generate workflow using AI
-        try {
-          const workflowContent = await generateWorkflowFromPrompt(
-            aiAnalysis.workflow_request || text,
-            ['dropbox', 'email', 'slack', 'calendar', 'sms']
-          );
-          
-          result = {
-            action: 'workflow_created',
-            workflow: {
-              title: aiAnalysis.title || 'AI Generated Workflow',
-              content: workflowContent
-            },
-            message: `Workflow "${aiAnalysis.title}" created and ready to execute`
-          };
-          
-          chatResponse = `🔄 I created a workflow "${aiAnalysis.title || 'AI Generated Workflow'}" for you. It's ready to execute with the tools you need.`;
-          
-        } catch (error) {
-          console.error("Workflow generation error:", error);
-          chatResponse = "I understand you want to create a workflow, but I need more specific details about the steps involved.";
-          result = {
-            action: 'question_answered',
-            response: chatResponse
-          };
-        }
-        
-      } else if (aiAnalysis.action === 'QUESTION') {
-        chatResponse = aiAnalysis.response || "I'm here to help you manage tasks and workflows. What would you like to do?";
-        result = {
-          action: 'question_answered',
-          response: chatResponse
-        };
-        
+  app.put("/api/feature-requests/:id/approve", async (req, res) => {
+    try {
+      const { notes } = req.body;
+      const success = featureRequestSystem.approveFeatureRequest(req.params.id, notes);
+      if (success) {
+        res.json({ success: true });
       } else {
-        // Default to task creation if unclear - with position
-        const existingTasks = await storage.getProjectTasks(projectId);
-        const angle = (existingTasks.length * 2 * Math.PI) / (existingTasks.length + 1);
-        const radius = 250;
-        const centerX = 400; 
-        const centerY = 300;
-        
-        const task = await storage.createTask({
-          title: text.substring(0, 100), // Limit title length
-          description: "Created via voice input",
-          status: "todo",
-          priority: 'medium',
-          projectId: projectId,
-          position: {
-            x: centerX + Math.cos(angle) * radius,
-            y: centerY + Math.sin(angle) * radius
-          }
-        });
-        
-        chatResponse = `✅ I created a task from your voice input: "${task.title}". You can find it in your task list.`;
-        result = {
-          action: 'task_created',
-          task: task,
-          message: "Created task from your voice input"
-        };
+        res.status(404).json({ error: "Feature request not found" });
       }
-
-      // Save AI response to chat so user can see what happened
-      const assistantMessage = await storage.createChatMessage({
-        content: chatResponse,
-        role: "assistant",
-        projectId: projectId,
-        metadata: [result]
-      });
-
-      // Broadcast to WebSocket clients
-      broadcastToProject(projectId, {
-        type: "voice_processed",
-        data: { userMessage, assistantMessage, result }
-      });
-
-      res.json(result);
     } catch (error) {
-      console.error("Voice processing error:", error);
-      res.status(500).json({ 
-        error: "Failed to process voice input",
-        action: 'error',
-        message: "Sorry, I couldn't understand that. Please try again."
-      });
+      console.error("Error approving feature request:", error);
+      res.status(500).json({ error: "Failed to approve feature request" });
     }
   });
 
-  // Object Storage Routes
-  app.get("/objects/:objectPath(*)", async (req, res) => {
-    const objectStorageService = new ObjectStorageService();
+  app.put("/api/feature-requests/:id/reject", async (req, res) => {
     try {
-      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      objectStorageService.downloadObject(objectFile, res);
-    } catch (error) {
-      console.error("Error accessing object:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.sendStatus(404);
+      const { reason } = req.body;
+      const success = featureRequestSystem.rejectFeatureRequest(req.params.id, reason);
+      if (success) {
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: "Feature request not found" });
       }
-      return res.sendStatus(500);
-    }
-  });
-
-  app.post("/api/objects/upload", async (req, res) => {
-    try {
-      const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL });
     } catch (error) {
-      console.error("Error getting upload URL:", error);
-      res.status(500).json({ error: "Failed to get upload URL" });
+      console.error("Error rejecting feature request:", error);
+      res.status(500).json({ error: "Failed to reject feature request" });
     }
   });
 
-  // Function calling endpoints
-  app.post("/api/functions/send-email", async (req, res) => {
+  // Tool Diagnostics
+  app.get("/api/diagnostics/tools", async (req, res) => {
     try {
-      // Integration with SendGrid would go here
-      console.log("Send email function called:", req.body);
-      res.json({ success: true, message: "Email sent successfully" });
+      const diagnostics = featureRequestSystem.getToolDiagnostics();
+      res.json(diagnostics);
     } catch (error) {
-      res.status(500).json({ error: "Failed to send email" });
+      console.error("Error fetching tool diagnostics:", error);
+      res.status(500).json({ error: "Failed to fetch tool diagnostics" });
     }
   });
 
-  app.post("/api/functions/send-sms", async (req, res) => {
+  // Project Status
+  app.get("/api/diagnostics/projects", async (req, res) => {
     try {
-      // Integration with Twilio would go here
-      console.log("Send SMS function called:", req.body);
-      res.json({ success: true, message: "SMS sent successfully" });
+      const statuses = featureRequestSystem.getProjectStatuses();
+      res.json(statuses);
     } catch (error) {
-      res.status(500).json({ error: "Failed to send SMS" });
+      console.error("Error fetching project statuses:", error);
+      res.status(500).json({ error: "Failed to fetch project statuses" });
     }
   });
 
-  app.post("/api/functions/search-web", async (req, res) => {
+  // Maintenance Settings
+  app.put("/api/maintenance/frequency", async (req, res) => {
     try {
-      // Integration with search API would go here
-      console.log("Web search function called:", req.body);
-      res.json({ 
-        success: true, 
-        results: [
-          { title: "Sample Result", url: "https://example.com", snippet: "Sample search result" }
-        ]
-      });
+      const { frequency } = req.body;
+      featureRequestSystem.setMaintenanceFrequency(frequency * 1000); // Convert to milliseconds
+      res.json({ success: true });
     } catch (error) {
-      res.status(500).json({ error: "Failed to search web" });
+      console.error("Error updating maintenance frequency:", error);
+      res.status(500).json({ error: "Failed to update maintenance frequency" });
     }
   });
 
-  // Enhanced AI Assistant endpoints
-  app.post("/api/ai/control", async (req, res) => {
+  // Workstation Organs
+  app.get("/api/workstation/organs", async (req, res) => {
     try {
-      const { request, context } = req.body;
-      activityLogger.logAIResponse('AI control request received', { request, context });
-      const response = await aiAssistant.processUserRequest(request, context);
-      
-      // Execute the actions immediately
-      const executionResult = await aiAssistant.executeActions(response.actions, context);
-      activityLogger.logAIResponse('AI control actions executed', { actionsCount: response.actions?.length });
-      
-      res.json({
-        message: response.message,
-        actions: response.actions,
-        websiteUpdates: response.websiteUpdates,
-        execution: executionResult
-      });
+      const organs = workstationOrganManager.getAllOrgans();
+      res.json(organs);
     } catch (error) {
-      console.error("Error with AI control:", error);
-      activityLogger.logSystemEvent('AI control request failed', { error: error.message });
-      res.status(500).json({ error: "Failed to process AI control request" });
+      console.error("Error fetching workstation organs:", error);
+      res.status(500).json({ error: "Failed to fetch workstation organs" });
     }
   });
 
-  // YouTube Integration endpoints  
+  app.post("/api/workstation/organs/:organId/activate", async (req, res) => {
+    try {
+      const success = workstationOrganManager.activateOrgan(req.params.organId);
+      if (success) {
+        res.json({ success: true });
+      } else {
+        res.status(404).json({ error: "Organ not found" });
+      }
+    } catch (error) {
+      console.error("Error activating organ:", error);
+      res.status(500).json({ error: "Failed to activate organ" });
+    }
+  });
+
+  app.post("/api/workstation/organs/voice-trigger", async (req, res) => {
+    try {
+      const { command } = req.body;
+      const organId = workstationOrganManager.triggerOrganByVoice(command);
+      if (organId) {
+        res.json({ success: true, organId });
+      } else {
+        res.status(400).json({ error: "No matching organ found for command" });
+      }
+    } catch (error) {
+      console.error("Error triggering organ by voice:", error);
+      res.status(500).json({ error: "Failed to trigger organ by voice" });
+    }
+  });
+
+  app.get("/api/workstation/organs/:organId/qr", async (req, res) => {
+    try {
+      const qrData = workstationOrganManager.generateQRForOrgan(req.params.organId);
+      if (qrData) {
+        res.json({ qrData });
+      } else {
+        res.status(404).json({ error: "Organ not found" });
+      }
+    } catch (error) {
+      console.error("Error generating QR for organ:", error);
+      res.status(500).json({ error: "Failed to generate QR for organ" });
+    }
+  });
+
+  // YouTube Integration
   app.get("/api/youtube/search", async (req, res) => {
     try {
-      const { query, maxResults = 10 } = req.query;
-      if (!query) {
-        return res.status(400).json({ error: "Query parameter is required" });
-      }
+      const { q, maxResults = 10 } = req.query;
       
-      activityLogger.logUserAction('YouTube search initiated', { query, maxResults });
-      const youtubeService = new YouTubeService();
-      const videos = await youtubeService.searchVideos(query as string, Number(maxResults));
-      activityLogger.logSystemEvent('YouTube search completed', { resultCount: videos.length });
-      res.json(videos);
+      if (!q) {
+        return res.status(400).json({ error: "Search query is required" });
+      }
+
+      const { searchYouTube } = await import("./youtube");
+      const results = await searchYouTube(q as string, parseInt(maxResults as string));
+      
+      // Track tool usage
+      featureRequestSystem.updateToolUsage('youtube-search', Date.now() - (req as any).startTime, true);
+      
+      res.json(results);
     } catch (error) {
       console.error("YouTube search error:", error);
-      activityLogger.logSystemEvent('YouTube search failed', { error: error.message });
-      res.status(500).json({ error: "Failed to search YouTube videos" });
+      featureRequestSystem.updateToolUsage('youtube-search', Date.now() - (req as any).startTime, false);
+      res.status(500).json({ error: "Failed to search YouTube" });
     }
   });
 
   app.get("/api/youtube/video/:videoId", async (req, res) => {
     try {
       const { videoId } = req.params;
-      activityLogger.logUserAction('YouTube video details requested', { videoId });
-      const youtubeService = new YouTubeService();
-      const video = await youtubeService.getVideoDetails(videoId);
-      if (!video) {
-        return res.status(404).json({ error: "Video not found" });
+      
+      if (!videoId) {
+        return res.status(400).json({ error: "Video ID is required" });
       }
-      activityLogger.logSystemEvent('YouTube video details retrieved', { videoTitle: video.title });
-      res.json(video);
+
+      const { getVideoDetails } = await import("./youtube");
+      const details = await getVideoDetails(videoId);
+      
+      res.json(details);
     } catch (error) {
       console.error("YouTube video details error:", error);
-      activityLogger.logSystemEvent('YouTube video details failed', { error: error.message });
       res.status(500).json({ error: "Failed to get video details" });
     }
   });
 
-  // Activity Log endpoint for real-time monitoring
-  app.get("/api/activity", (req, res) => {
-    const { type, limit = 50 } = req.query;
-    let activities = activityLogger.getRecentActivities(Number(limit));
-    
-    if (type) {
-      activities = activityLogger.getActivitiesByType(type as any);
-    }
-    
-    res.json(activities);
-  });
-
-  // Health check endpoint for maintenance system
+  // Health Check
   app.get("/api/health", (req, res) => {
-    activityLogger.logSystemEvent('Health check performed');
-    res.json({ 
-      status: 'healthy',
-      timestamp: new Date(),
+    res.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
       services: {
-        database: 'connected',
-        websocket: 'active',
-        ai: 'operational'
+        database: "connected",
+        websocket: "active",
+        ai: "available",
+        youtube: "available",
+        workstation: "ready"
+      },
+      organs: {
+        total: workstationOrganManager.getAllOrgans().length,
+        active: workstationOrganManager.getActiveOrgans().length
       }
     });
   });
 
-  app.get("/api/ai/suggestions", async (req, res) => {
-    try {
-      // Mock user activity data - in real app this would come from analytics
-      const userActivity = {
-        recentTasks: ["Complete project proposal", "Review team feedback", "Schedule client meeting"],
-        timeSpent: { "tasks": 120, "chat": 45, "mindmap": 30 },
-        preferences: { "view": "mindmap", "theme": "dark", "notifications": true }
-      };
-      
-      const suggestions = await aiAssistant.generateProactiveSuggestions(userActivity);
-      res.json({ suggestions });
-    } catch (error) {
-      console.error("Error generating suggestions:", error);
-      res.status(500).json({ error: "Failed to generate suggestions" });
-    }
+  // Middleware to track request start time
+  app.use((req: any, res, next) => {
+    req.startTime = Date.now();
+    next();
   });
-
-
-
-  // Workflow routes - Conversational Workflow Composer
-  app.post("/api/workflows/generate", async (req, res) => {
-    try {
-      const { userInput, projectId } = req.body;
-      
-      if (!userInput) {
-        return res.status(400).json({ error: "User input is required" });
-      }
-
-      const { generateWorkflowFromSpeech } = await import("./aiWorkflowGenerator");
-      const workflow = await generateWorkflowFromSpeech(userInput, { projectId });
-      
-      res.json({ workflow });
-    } catch (error) {
-      console.error("Error generating workflow:", error);
-      res.status(500).json({ error: "Failed to generate workflow" });
-    }
-  });
-
-  app.post("/api/workflows/:id/execute", async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { workflow, mode = "simulate" } = req.body;
-      
-      if (!workflow) {
-        return res.status(400).json({ error: "Workflow is required" });
-      }
-
-      const { workflowEngine } = await import("./workflowEngine");
-      const runtime = await workflowEngine.executeFlow(workflow, mode);
-      
-      res.json({ runtime });
-    } catch (error) {
-      console.error("Error executing workflow:", error);
-      res.status(500).json({ error: "Failed to execute workflow" });
-    }
-  });
-
-  app.post("/api/workflows/:id/step/:stepId", async (req, res) => {
-    try {
-      const { id, stepId } = req.params;
-      const { workflow, mode = "simulate" } = req.body;
-      
-      if (!workflow) {
-        return res.status(400).json({ error: "Workflow is required" });
-      }
-
-      const { workflowEngine } = await import("./workflowEngine");
-      const trace = await workflowEngine.executeStep(workflow, stepId);
-      
-      res.json({ trace });
-    } catch (error) {
-      console.error("Error executing step:", error);
-      res.status(500).json({ error: "Failed to execute step" });
-    }
-  });
-
-  app.get("/api/workflows/:id/runtime", async (req, res) => {
-    try {
-      const { id } = req.params;
-      
-      const { workflowEngine } = await import("./workflowEngine");
-      const runtime = workflowEngine.getRuntime(id);
-      
-      if (!runtime) {
-        return res.status(404).json({ error: "Runtime not found" });
-      }
-      
-      res.json({ runtime });
-    } catch (error) {
-      console.error("Error getting runtime:", error);
-      res.status(500).json({ error: "Failed to get runtime" });
-    }
-  });
-
-  app.post("/api/workflows/:id/refine", async (req, res) => {
-    try {
-      const { workflow, feedback } = req.body;
-      
-      if (!workflow || !feedback) {
-        return res.status(400).json({ error: "Workflow and feedback are required" });
-      }
-
-      const { refineWorkflow } = await import("./aiWorkflowGenerator");
-      const refinedWorkflow = await refineWorkflow(workflow, feedback);
-      
-      res.json({ workflow: refinedWorkflow });
-    } catch (error) {
-      console.error("Error refining workflow:", error);
-      res.status(500).json({ error: "Failed to refine workflow" });
-    }
-  });
-
-  app.post("/api/workflows/step/:stepId/explain", async (req, res) => {
-    try {
-      const { stepId } = req.params;
-      const { workflow, level = "user" } = req.body;
-      
-      if (!workflow) {
-        return res.status(400).json({ error: "Workflow is required" });
-      }
-
-      const { explainWorkflowStep } = await import("./aiWorkflowGenerator");
-      const explanation = await explainWorkflowStep(workflow, stepId, level);
-      
-      res.json({ explanation });
-    } catch (error) {
-      console.error("Error explaining step:", error);
-      res.status(500).json({ error: "Failed to explain step" });
-    }
-  });
-
-  // Create HTTP server (will be passed from index.ts)
-  const httpServer = createServer(app);
-
-  // WebSocket setup
-  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
-  const projectConnections = new Map<string, Set<WebSocket>>();
-
-  wss.on('connection', (ws) => {
-    ws.on('message', (data) => {
-      try {
-        const message = JSON.parse(data.toString());
-        
-        if (message.type === 'join_project') {
-          const projectId = message.projectId;
-          if (!projectConnections.has(projectId)) {
-            projectConnections.set(projectId, new Set());
-          }
-          projectConnections.get(projectId)!.add(ws);
-          
-          ws.on('close', () => {
-            projectConnections.get(projectId)?.delete(ws);
-          });
-        }
-      } catch (error) {
-        console.error('WebSocket message error:', error);
-      }
-    });
-  });
-
-  function broadcastToProject(projectId: string, data: any) {
-    const connections = projectConnections.get(projectId);
-    if (connections) {
-      connections.forEach(ws => {
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify(data));
-        }
-      });
-    }
-  }
-
-  async function executeFunctionCall(func: any, projectId: string) {
-    try {
-      switch (func.name) {
-        case 'create_task':
-          const task = await storage.createTask({
-            ...func.params,
-            projectId,
-            assigneeId: "mock-user-id"
-          });
-          broadcastToProject(projectId, {
-            type: "task_created",
-            data: task
-          });
-          break;
-        
-        case 'send_email':
-          // Would integrate with SendGrid here
-          console.log("Executing send_email:", func.params);
-          break;
-          
-        case 'schedule_event':
-          // Would integrate with Google Calendar here
-          console.log("Executing schedule_event:", func.params);
-          break;
-          
-        default:
-          console.log("Unknown function:", func.name);
-      }
-    } catch (error) {
-      console.error("Error executing function call:", error);
-    }
-  }
 
   return httpServer;
 }

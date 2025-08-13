@@ -8,6 +8,7 @@ import TaskDetailPanel from "@/components/TaskDetailPanel";
 import VoiceModal from "@/components/VoiceModal";
 import { ChatPane } from "@/components/ChatPane";
 import { InspectorPane } from "@/components/InspectorPane";
+import { FeatureRequestPanel } from "@/components/FeatureRequestPanel";
 import { DiagnosticsPanel } from "@/components/DiagnosticsPanel";
 import { TaskListView } from "@/components/TaskListView";
 import { QuickCaptureButton } from "@/components/QuickCaptureButton";
