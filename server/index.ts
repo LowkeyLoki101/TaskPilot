@@ -1,5 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
+// Initialize agent system
+import { AgentRegistry } from "./agentRegistry";
+import { AgentOrchestrator } from "./agentOrchestrator";
 import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
@@ -37,6 +40,15 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize agent systems
+  console.log("🚀 Initializing AI Agent Systems...");
+  try {
+    await AgentOrchestrator.initialize();
+    console.log("✅ Agent systems initialized successfully");
+  } catch (error) {
+    console.error("❌ Failed to initialize agent systems:", error);
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

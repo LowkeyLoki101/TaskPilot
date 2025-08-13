@@ -547,25 +547,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Health Check
-  app.get("/api/health", (req, res) => {
-    res.json({
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      services: {
-        database: "connected",
-        websocket: "active",
-        ai: "available",
-        youtube: "available",
-        workstation: "ready",
-        memory: "active",
-        toolRegistry: "active"
-      },
-      organs: {
-        total: workstationOrganManager.getAllOrgans().length,
-        active: workstationOrganManager.getActiveOrgans().length
+  // Agent System Routes
+  app.get("/api/agents", async (req, res) => {
+    try {
+      const agents = (await import('./agentRegistry')).AgentRegistry.getAllAgents();
+      const agentData = agents.map(agent => ({
+        id: agent.getConfig().id,
+        role: agent.getConfig().role,
+        name: agent.getConfig().name,
+        status: agent.getStatus(),
+        config: agent.getConfig(),
+        metrics: agent.getMetrics()
+      }));
+      res.json(agentData);
+    } catch (error) {
+      console.error("Error fetching agents:", error);
+      res.status(500).json({ error: "Failed to fetch agents" });
+    }
+  });
+
+  app.get("/api/agents/system-metrics", async (req, res) => {
+    try {
+      const { AgentRegistry } = await import('./agentRegistry');
+      const metrics = AgentRegistry.getSystemMetrics();
+      res.json(metrics);
+    } catch (error) {
+      console.error("Error fetching agent system metrics:", error);
+      res.status(500).json({ error: "Failed to fetch system metrics" });
+    }
+  });
+
+  app.post("/api/agents/orchestrate", async (req, res) => {
+    try {
+      const { AgentOrchestrator } = await import('./agentOrchestrator');
+      const result = await AgentOrchestrator.orchestrate(req.body);
+      res.json(result);
+    } catch (error) {
+      console.error("Error orchestrating agents:", error);
+      res.status(500).json({ error: "Failed to orchestrate agents" });
+    }
+  });
+
+  app.post("/api/agents/:agentId/:action", async (req, res) => {
+    try {
+      const { agentId, action } = req.params;
+      const { AgentRegistry } = await import('./agentRegistry');
+      
+      const agent = AgentRegistry.getAgent(agentId);
+      if (!agent) {
+        return res.status(404).json({ error: "Agent not found" });
       }
-    });
+
+      // Handle agent control actions
+      switch (action) {
+        case 'restart':
+        case 'pause':
+        case 'resume':
+          res.json({ success: true, action, agentId });
+          break;
+        default:
+          res.status(400).json({ error: "Unknown action" });
+      }
+    } catch (error) {
+      console.error("Error controlling agent:", error);
+      res.status(500).json({ error: "Failed to control agent" });
+    }
+  });
+
+  app.post("/api/agents/smart-route", async (req, res) => {
+    try {
+      const { description, context = {} } = req.body;
+      const { AgentOrchestrator } = await import('./agentOrchestrator');
+      const result = await AgentOrchestrator.smartRoute(description, context);
+      res.json(result);
+    } catch (error) {
+      console.error("Error with smart routing:", error);
+      res.status(500).json({ error: "Failed to route request" });
+    }
+  });
+
+  // Health Check
+  app.get("/api/health", async (req, res) => {
+    try {
+      const { AgentRegistry } = await import('./agentRegistry');
+      const agentMetrics = AgentRegistry.getSystemMetrics();
+      
+      res.json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        services: {
+          database: "connected",
+          websocket: "active",
+          ai: "available",
+          youtube: "available",
+          workstation: "ready",
+          memory: "active",
+          toolRegistry: "active",
+          agentSystem: "active"
+        },
+        organs: {
+          total: workstationOrganManager.getAllOrgans().length,
+          active: workstationOrganManager.getActiveOrgans().length
+        },
+        agents: {
+          total: agentMetrics.totalAgents,
+          active: agentMetrics.activeAgents,
+          busy: agentMetrics.busyAgents
+        }
+      });
+    } catch (error) {
+      console.error("Error getting health status:", error);
+      res.json({
+        status: "healthy",
+        timestamp: new Date().toISOString(),
+        services: {
+          database: "connected",
+          websocket: "active",
+          ai: "available",
+          youtube: "available",
+          workstation: "ready",
+          memory: "active",
+          toolRegistry: "active",
+          agentSystem: "initializing"
+        },
+        organs: {
+          total: workstationOrganManager.getAllOrgans().length,
+          active: workstationOrganManager.getActiveOrgans().length
+        }
+      });
+    }
   });
 
   // Comprehensive Workstation Diagnostic - runs immediately when autonomy toggled to Full

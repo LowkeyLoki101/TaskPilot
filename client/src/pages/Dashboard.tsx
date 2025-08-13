@@ -27,7 +27,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download } from "lucide-react";
+import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download, Bot } from "lucide-react";
+import { AgentDashboard } from '@/components/AgentDashboard';
 import logoPath from "@assets/Emergent Transparent Logo_1755110400429.png";
 import { Switch } from "@/components/ui/switch";
 
@@ -762,6 +763,16 @@ export default function Dashboard() {
                       <BarChart3 className="h-3 w-3 mr-1" />
                       Debug
                     </Button>
+                    <Button
+                      variant={currentModule === 'agents' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCurrentModule('agents')}
+                      className="h-7 px-2"
+                      data-testid="module-agents"
+                    >
+                      <Bot className="h-3 w-3 mr-1" />
+                      Agents
+                    </Button>
                   </div>
                 )}
               </div>
@@ -954,6 +965,11 @@ export default function Dashboard() {
                       autonomyMode={autonomyMode}
                       onRunMaintenance={runMaintenanceCheck}
                     />
+                  </div>
+                )}
+                {currentModule === 'agents' && (
+                  <div className="h-full p-6 overflow-y-auto">
+                    <AgentDashboard />
                   </div>
                 )}
               </>

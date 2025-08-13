@@ -27,10 +27,11 @@ import {
 } from "lucide-react";
 import { FeatureRequestPanel } from "./FeatureRequestPanel";
 import { ChatPane } from "./ChatPane";
+import { AgentDashboard } from '@/components/AgentDashboard';
 
 interface InspectorPaneProps {
   selectedTaskId?: string | null;
-  currentModule?: 'mindmap' | 'calendar' | 'tasks' | 'browser' | 'diagnostics';
+  currentModule?: 'mindmap' | 'calendar' | 'tasks' | 'browser' | 'diagnostics' | 'agents';
   autonomyMode?: 'manual' | 'semi' | 'full';
   aiActivityLog?: Array<{id: string, action: string, timestamp: Date | string, type: 'task' | 'bug' | 'enhancement' | 'maintenance'}>;
   lastMaintenanceRun?: Date | null;
@@ -139,6 +140,10 @@ export function InspectorPane({
             <TabsTrigger value="diagnostics" className="text-xs">
               <Bug className="h-3 w-3 mr-1" />
               Debug
+            </TabsTrigger>
+            <TabsTrigger value="agents" className="text-xs">
+              <Users className="h-3 w-3 mr-1" />
+              Agents
             </TabsTrigger>
           </TabsList>
         </div>
@@ -331,6 +336,12 @@ export function InspectorPane({
                 autonomyMode={autonomyMode}
                 onRunMaintenance={onRunMaintenance}
               />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="agents" className="h-full mt-0">
+            <div className="h-full p-4 overflow-y-auto">
+              <AgentDashboard />
             </div>
           </TabsContent>
         </div>

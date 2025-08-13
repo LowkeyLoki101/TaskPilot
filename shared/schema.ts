@@ -142,6 +142,68 @@ export const insertChatMessageSchema = createInsertSchema(chatMessages).omit({
   createdAt: true,
 });
 
+// Advanced AI Agents Schema
+export const agentInstances = pgTable('agent_instances', {
+  id: text('id').primaryKey(),
+  role: text('role').notNull(),
+  name: text('name').notNull(),
+  status: text('status').notNull().default('idle'),
+  config: jsonb('config').notNull(),
+  metrics: jsonb('metrics').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  lastActivity: timestamp('last_activity').defaultNow().notNull(),
+});
+
+export const agentMessages = pgTable('agent_messages', {
+  id: text('id').primaryKey(),
+  fromAgent: text('from_agent').notNull(),
+  toAgent: text('to_agent').notNull(),
+  messageType: text('message_type').notNull(),
+  payload: jsonb('payload').notNull(),
+  priority: text('priority').notNull().default('medium'),
+  processed: boolean('processed').notNull().default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  correlationId: text('correlation_id'),
+});
+
+export const agentTaskAssignments = pgTable('agent_task_assignments', {
+  id: text('id').primaryKey(),
+  taskId: text('task_id').notNull(),
+  assignedAgent: text('assigned_agent').notNull(),
+  priority: integer('priority').notNull().default(5),
+  status: text('status').notNull().default('pending'),
+  result: jsonb('result'),
+  metadata: jsonb('metadata').notNull(),
+  deadline: timestamp('deadline'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+});
+
+export const agentLearningRecords = pgTable('agent_learning_records', {
+  id: text('id').primaryKey(),
+  agentId: text('agent_id').notNull(),
+  scenario: text('scenario').notNull(),
+  decision: text('decision').notNull(),
+  outcome: text('outcome').notNull(),
+  feedback: text('feedback'),
+  improvementSuggestions: jsonb('improvement_suggestions'),
+  confidence: real('confidence'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const agentCollaborations = pgTable('agent_collaborations', {
+  id: text('id').primaryKey(),
+  initiatingAgent: text('initiating_agent').notNull(),
+  collaboratingAgent: text('collaborating_agent').notNull(),
+  collaborationType: text('collaboration_type').notNull(),
+  context: jsonb('context').notNull(),
+  outcome: text('outcome'),
+  successfullyCompleted: boolean('successfully_completed').default(false),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  completedAt: timestamp('completed_at'),
+});
+
 // Types
 // Feature Requests - LLM self-prompting system for features
 export const featureRequests = pgTable("feature_requests", {
@@ -402,3 +464,72 @@ export const insertAdvancedFeatureProposalSchema = createInsertSchema(advancedFe
 });
 export type InsertAdvancedFeatureProposal = z.infer<typeof insertAdvancedFeatureProposalSchema>;
 export type AdvancedFeatureProposal = typeof advancedFeatureProposals.$inferSelect;
+
+// Agent Relations
+export const agentInstancesRelations = relations(agentInstances, ({ many }) => ({
+  sentMessages: many(agentMessages, { relationName: 'sentMessages' }),
+  receivedMessages: many(agentMessages, { relationName: 'receivedMessages' }),
+  taskAssignments: many(agentTaskAssignments),
+  learningRecords: many(agentLearningRecords),
+  initiatedCollaborations: many(agentCollaborations, { relationName: 'initiatedCollaborations' }),
+  participatedCollaborations: many(agentCollaborations, { relationName: 'participatedCollaborations' }),
+}));
+
+export const agentMessagesRelations = relations(agentMessages, ({ one }) => ({
+  fromAgentInstance: one(agentInstances, {
+    fields: [agentMessages.fromAgent],
+    references: [agentInstances.id],
+    relationName: 'sentMessages'
+  }),
+  toAgentInstance: one(agentInstances, {
+    fields: [agentMessages.toAgent],
+    references: [agentInstances.id],
+    relationName: 'receivedMessages'
+  }),
+}));
+
+export const agentTaskAssignmentsRelations = relations(agentTaskAssignments, ({ one }) => ({
+  agent: one(agentInstances, {
+    fields: [agentTaskAssignments.assignedAgent],
+    references: [agentInstances.id],
+  }),
+}));
+
+export const agentLearningRecordsRelations = relations(agentLearningRecords, ({ one }) => ({
+  agent: one(agentInstances, {
+    fields: [agentLearningRecords.agentId],
+    references: [agentInstances.id],
+  }),
+}));
+
+export const agentCollaborationsRelations = relations(agentCollaborations, ({ one }) => ({
+  initiatingAgentInstance: one(agentInstances, {
+    fields: [agentCollaborations.initiatingAgent],
+    references: [agentInstances.id],
+    relationName: 'initiatedCollaborations'
+  }),
+  collaboratingAgentInstance: one(agentInstances, {
+    fields: [agentCollaborations.collaboratingAgent],
+    references: [agentInstances.id],
+    relationName: 'participatedCollaborations'
+  }),
+}));
+
+// Agent Schema Types
+export type AgentInstanceType = typeof agentInstances.$inferSelect;
+export type InsertAgentInstanceType = typeof agentInstances.$inferInsert;
+export type AgentMessageType = typeof agentMessages.$inferSelect;
+export type InsertAgentMessageType = typeof agentMessages.$inferInsert;
+export type AgentTaskAssignmentType = typeof agentTaskAssignments.$inferSelect;
+export type InsertAgentTaskAssignmentType = typeof agentTaskAssignments.$inferInsert;
+export type AgentLearningRecordType = typeof agentLearningRecords.$inferSelect;
+export type InsertAgentLearningRecordType = typeof agentLearningRecords.$inferInsert;
+export type AgentCollaborationType = typeof agentCollaborations.$inferSelect;
+export type InsertAgentCollaborationType = typeof agentCollaborations.$inferInsert;
+
+// Agent Schema Validation
+export const insertAgentInstanceSchema = createInsertSchema(agentInstances);
+export const insertAgentMessageSchema = createInsertSchema(agentMessages);
+export const insertAgentTaskAssignmentSchema = createInsertSchema(agentTaskAssignments);
+export const insertAgentLearningRecordSchema = createInsertSchema(agentLearningRecords);
+export const insertAgentCollaborationSchema = createInsertSchema(agentCollaborations);
