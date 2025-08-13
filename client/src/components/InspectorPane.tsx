@@ -75,18 +75,40 @@ export function InspectorPane({
     ]
   } : null;
 
-  const agentActivity = [
-    { action: "Created 3 tasks from voice input", time: "5 minutes ago", status: "success" },
-    { action: "Sent email notification to team", time: "15 minutes ago", status: "success" },
-    { action: "Updated project timeline", time: "30 minutes ago", status: "success" },
-    { action: "Searched web for design inspiration", time: "1 hour ago", status: "success" }
-  ];
+  // Convert real activity log to display format
+  const agentActivity = aiActivityLog
+    .filter(log => log.type !== 'task') // Filter out regular tasks to show AI-specific actions
+    .slice(0, 10) // Show latest 10 activities
+    .map(log => ({
+      action: log.action,
+      time: formatTimeAgo(log.timestamp),
+      status: "success",
+      type: log.type
+    }));
 
-  const teamActivity = [
-    { user: "Sarah Chen", action: "Updated task status", time: "10 minutes ago" },
-    { user: "John Doe", action: "Added comment", time: "25 minutes ago" },
-    { user: "Mike Wilson", action: "Completed task", time: "1 hour ago" }
-  ];
+  // Show user task-related activities
+  const teamActivity = aiActivityLog
+    .filter(log => log.type === 'task')
+    .slice(0, 5) // Show latest 5 activities
+    .map(log => ({
+      user: "You", // For now, all activities are user activities
+      action: log.action,
+      time: formatTimeAgo(log.timestamp)
+    }));
+
+  // Helper function to format timestamps
+  function formatTimeAgo(timestamp: Date): string {
+    const now = new Date();
+    const diff = now.getTime() - timestamp.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (minutes < 1) return "Just now";
+    if (minutes < 60) return `${minutes} minutes ago`;
+    if (hours < 24) return `${hours} hours ago`;
+    return `${days} days ago`;
+  }
 
   return (
     <div className={`flex flex-col h-full bg-card border-l border-border ${className}`} data-testid="inspector-pane">
@@ -270,15 +292,23 @@ export function InspectorPane({
                     AI Agent Activity
                   </div>
                   <div className="space-y-2">
-                    {agentActivity.map((activity, index) => (
+                    {agentActivity.length > 0 ? agentActivity.map((activity, index) => (
                       <div key={index} className="flex items-start gap-2 p-2 bg-muted/30 rounded text-xs">
-                        <CheckCircle2 className="h-3 w-3 text-green-600 mt-0.5 shrink-0" />
+                        <div className={`h-3 w-3 rounded-full mt-0.5 shrink-0 ${
+                          activity.type === 'maintenance' ? 'bg-blue-500' :
+                          activity.type === 'enhancement' ? 'bg-green-500' :
+                          activity.type === 'bug' ? 'bg-red-500' : 'bg-gray-500'
+                        }`} />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium">{activity.action}</p>
                           <p className="text-muted-foreground">{activity.time}</p>
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <p className="text-xs">No AI activity logged yet</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -291,7 +321,7 @@ export function InspectorPane({
                     Team Activity
                   </div>
                   <div className="space-y-2">
-                    {teamActivity.map((activity, index) => (
+                    {teamActivity.length > 0 ? teamActivity.map((activity, index) => (
                       <div key={index} className="flex items-start gap-2 p-2 bg-muted/30 rounded text-xs">
                         <User className="h-3 w-3 text-blue-600 mt-0.5 shrink-0" />
                         <div className="flex-1 min-w-0">
@@ -299,7 +329,11 @@ export function InspectorPane({
                           <p className="text-muted-foreground">{activity.time}</p>
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        <p className="text-xs">No user activity logged yet</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
