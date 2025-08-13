@@ -8,7 +8,7 @@ interface HeaderProps {
 
 export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
   return (
-    <header className="bg-card border-b border-border sticky top-0 z-50">
+    <header className="bg-[#0b0b0b] border-b border-zinc-800 sticky top-0 z-50">
       <div className="max-w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
@@ -22,10 +22,10 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
             
             {/* Text Branding - simple, no colors */}
             <div className="hidden sm:flex flex-col">
-              <span className="text-sm font-bold tracking-wide text-foreground">
+              <span className="text-sm font-bold tracking-wide text-white">
                 EMERGENT
               </span>
-              <span className="text-xs tracking-widest text-muted-foreground">
+              <span className="text-xs tracking-widest text-zinc-400">
                 INTELLIGENCE
               </span>
             </div>
@@ -34,12 +34,12 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
           {/* Voice Controls and Actions */}
           <div className="flex items-center space-x-2 sm:space-x-4">
             {/* Voice Status Indicator - Hidden on small mobile */}
-            <div className="hidden sm:flex items-center space-x-2 bg-muted px-3 py-2 rounded-lg">
+            <div className="hidden sm:flex items-center space-x-2 bg-zinc-800 px-3 py-2 rounded-lg">
               <div 
                 className={`w-2 h-2 rounded-full ${isVoiceActive ? 'bg-green-400 animate-pulse-slow' : 'bg-green-400'}`}
                 data-testid="indicator-voice-status"
               ></div>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-zinc-400">
                 {isVoiceActive ? 'Listening...' : 'Voice Ready'}
               </span>
             </div>
