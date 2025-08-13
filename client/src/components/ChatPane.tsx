@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Send, Bot, User, Zap, Mic, MicOff } from "lucide-react";
+import { Send, Bot, User, Zap, Mic, MicOff, Upload, Image, FileText } from "lucide-react";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 import { useVoice } from "@/hooks/useVoice";
 
 interface ChatMessage {
@@ -72,7 +74,10 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollElement) {
+        scrollElement.scrollTop = scrollElement.scrollHeight;
+      }
     }
   }, [messages]);
 
@@ -181,6 +186,24 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
               disabled={sendMessage.isPending}
               data-testid="chat-input"
             />
+            <ObjectUploader
+              maxNumberOfFiles={3}
+              maxFileSize={10485760} // 10MB
+              onGetUploadParameters={async () => {
+                const response = await fetch("/api/objects/upload", { method: "POST" });
+                const data = await response.json();
+                return { method: "PUT" as const, url: data.uploadURL };
+              }}
+              onComplete={(result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
+                if (result.successful.length > 0) {
+                  const fileUrls = result.successful.map(file => file.uploadURL).join(", ");
+                  setMessage(prev => prev + (prev ? "\n" : "") + `📎 Files: ${fileUrls}`);
+                }
+              }}
+              buttonClassName="shrink-0"
+            >
+              <Upload className="h-4 w-4" />
+            </ObjectUploader>
             <Button
               type="button"
               onClick={handleVoiceToggle}

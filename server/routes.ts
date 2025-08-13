@@ -68,6 +68,69 @@ const openai = new OpenAI({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Object storage routes for file upload
+  app.post("/api/objects/upload", async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      res.json({ uploadURL });
+    } catch (error) {
+      console.error("Error getting upload URL:", error);
+      res.status(500).json({ error: "Failed to get upload URL" });
+    }
+  });
+
+  // Serve uploaded files
+  app.get("/objects/:objectPath(*)", async (req, res) => {
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
+      objectStorageService.downloadObject(objectFile, res);
+    } catch (error) {
+      console.error("Error serving object:", error);
+      if (error instanceof ObjectNotFoundError) {
+        return res.sendStatus(404);
+      }
+      return res.sendStatus(500);
+    }
+  });
+
+  // AI image generation endpoint
+  app.post("/api/ai/generate-image", async (req, res) => {
+    try {
+      const { enhancedAI } = await import("./openai");
+      const { prompt } = req.body;
+      
+      if (!prompt) {
+        return res.status(400).json({ error: "Prompt is required" });
+      }
+
+      const result = await enhancedAI.generateImage(prompt);
+      res.json(result);
+    } catch (error) {
+      console.error("Error generating image:", error);
+      res.status(500).json({ error: "Failed to generate image" });
+    }
+  });
+
+  // AI image analysis endpoint
+  app.post("/api/ai/analyze-image", async (req, res) => {
+    try {
+      const { enhancedAI } = await import("./openai");
+      const { base64Image } = req.body;
+      
+      if (!base64Image) {
+        return res.status(400).json({ error: "Base64 image is required" });
+      }
+
+      const result = await enhancedAI.analyzeImage(base64Image);
+      res.json({ analysis: result });
+    } catch (error) {
+      console.error("Error analyzing image:", error);
+      res.status(500).json({ error: "Failed to analyze image" });
+    }
+  });
+
   // Projects
   app.get("/api/projects", async (req, res) => {
     try {
