@@ -32,7 +32,7 @@ interface InspectorPaneProps {
   selectedTaskId?: string | null;
   currentModule?: 'mindmap' | 'calendar' | 'tasks' | 'browser' | 'diagnostics';
   autonomyMode?: 'manual' | 'semi' | 'full';
-  aiActivityLog?: Array<{id: string, action: string, timestamp: Date, type: 'task' | 'bug' | 'enhancement' | 'maintenance'}>;
+  aiActivityLog?: Array<{id: string, action: string, timestamp: Date | string, type: 'task' | 'bug' | 'enhancement' | 'maintenance'}>;
   lastMaintenanceRun?: Date | null;
   onRunMaintenance?: () => void;
   projectId: string;
@@ -100,9 +100,10 @@ export function InspectorPane({
     }));
 
   // Helper function to format timestamps
-  function formatTimeAgo(timestamp: Date): string {
+  function formatTimeAgo(timestamp: Date | string): string {
     const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
+    const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+    const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
