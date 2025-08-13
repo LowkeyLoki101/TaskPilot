@@ -12,7 +12,7 @@ import { FeatureRequestPanel } from "@/components/FeatureRequestPanel";
 import { DiagnosticsPanel } from "@/components/DiagnosticsPanel";
 import { TaskListView } from "@/components/TaskListView";
 import { QuickCaptureButton } from "@/components/QuickCaptureButton";
-import { MobileNav } from "@/components/MobileNav";
+import { MobileNavigation } from "@/components/MobileNavigation";
 import { StepRunner } from "@/components/StepRunner";
 import { CommandPalette } from "@/components/CommandPalette";
 import { TraceCanvas } from "@/components/TraceCanvas";
@@ -29,13 +29,15 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download, Bot } from "lucide-react";
 import { AgentDashboard } from '@/components/AgentDashboard';
+import { TaskCreateModal } from '@/components/TaskCreateModal';
 import logoPath from "@assets/Emergent Transparent Logo_1755110400429.png";
 import { Switch } from "@/components/ui/switch";
 
 export default function Dashboard() {
 
-  const [currentModule, setCurrentModule] = useState<'mindmap' | 'calendar' | 'tasks' | 'browser' | 'diagnostics' | 'agents'>('mindmap');
-  const [mobileTab, setMobileTab] = useState<'today' | 'inbox' | 'projects'>('today');
+  const [currentModule, setCurrentModule] = useState<string>('mindmap');
+  const [isTaskCreateModalOpen, setIsTaskCreateModalOpen] = useState(false);
+
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
@@ -108,7 +110,7 @@ export default function Dashboard() {
       });
     } else {
       // Process as regular voice command
-      await processVoiceCommand(transcript, currentProjectId);
+      await processVoiceCommand(transcript);
     }
   };
 
@@ -513,150 +515,73 @@ export default function Dashboard() {
     }
   };
 
-  const selectedTask = todayTasks.concat(inboxTasks).find(task => task.id === selectedTaskId) || null;
+  const selectedTask = todayTasks.find(task => task.id === selectedTaskId) || 
+                       inboxTasks.find(task => task.id === selectedTaskId) || null;
 
   // Responsive layout based on screen size
   if (isMobile) {
     return (
-      <div className="h-screen bg-background text-foreground font-inter">
+      <div className="h-screen bg-background text-foreground font-inter flex flex-col">
         <Header 
           onVoiceToggle={handleVoiceToggle}
           isVoiceActive={isListening}
         />
         
-        {/* Mobile Content - Adjusted for single bottom nav */}
-        <div className="h-[calc(100vh-4rem-4rem)] overflow-hidden pb-safe">
-          {mobileTab === 'today' && (
-            <div className="h-full flex flex-col">
-              {/* Header */}
-              <div className="px-4 py-3 border-b border-border bg-card/50">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-bold">Today</h2>
-                    <p className="text-xs text-muted-foreground mt-0.5">{todayTasks.length} {todayTasks.length === 1 ? 'task' : 'tasks'}</p>
-                  </div>
-                  <Badge variant="outline" className="text-xs px-2 py-1">
-                    {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                  </Badge>
-                </div>
+        {/* Mobile Content Container */}
+        <div className="flex-1 overflow-y-auto">
+          {currentModule === 'mindmap' && (
+            <div className="h-full p-4">
+              <MindMap
+                projectId={currentProjectId}
+                selectedTaskId={selectedTaskId}
+                onTaskSelect={setSelectedTaskId}
+              />
+            </div>
+          )}
+          {currentModule === 'calendar' && (
+            <div className="h-full">
+              <CalendarView />
+            </div>
+          )}
+          {currentModule === 'tasks' && (
+            <div className="h-full">
+              <TaskListView 
+                projectId={currentProjectId}
+                onTaskSelect={setSelectedTaskId}
+              />
+            </div>
+          )}
+          {currentModule === 'agents' && (
+            <div className="h-full p-4">
+              <AgentDashboard />
+            </div>
+          )}
+          {currentModule === 'diagnostics' && (
+            <div className="h-full p-4">
+              <DiagnosticsPanel 
+                aiActivityLog={aiActivityLog}
+                lastMaintenanceRun={lastMaintenanceRun}
+                autonomyMode={autonomyMode}
+                onRunMaintenance={runMaintenanceCheck}
+              />
+            </div>
+          )}
+          {currentModule === 'browser' && (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <Globe className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="text-muted-foreground">Browser view coming soon</p>
               </div>
-
-              {/* Task List */}
-              <ScrollArea className="flex-1">
-                <div className="p-4 space-y-3">
-                  {todayTasks.length === 0 ? (
-                    <div className="text-center py-12">
-                      <CheckCircle className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                      <p className="text-muted-foreground text-sm">No tasks for today</p>
-                      <p className="text-xs text-muted-foreground/70 mt-1">Use the + button to add a task</p>
-                    </div>
-                  ) : (
-                    todayTasks.map((task) => (
-                      <Card 
-                        key={task.id}
-                        className="cursor-pointer active:scale-98 transition-all duration-150 hover:shadow-md"
-                        onClick={() => handleTaskSelect(task.id)}
-                        data-testid={`task-card-${task.id}`}
-                      >
-                        <CardContent className="p-4">
-                          <div className="space-y-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <h3 className="font-semibold text-base leading-tight flex-1">{task.title}</h3>
-                              <Badge 
-                                variant={task.priority === "high" ? "destructive" : task.priority === "medium" ? "default" : "outline"}
-                                className="text-xs px-2 py-0.5 shrink-0"
-                              >
-                                {task.priority}
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <CheckCircle className="h-3.5 w-3.5" />
-                                <span className="font-medium">{task.steps.filter(s => s.completed).length}/{task.steps.length}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3.5 w-3.5" />
-                                <span className="font-medium">Due today</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <User className="h-3.5 w-3.5" />
-                                <span className="font-medium">{task.assignee || 'You'}</span>
-                              </div>
-                            </div>
-
-                            {task.tags && task.tags.length > 0 && (
-                              <div className="flex flex-wrap gap-1.5">
-                                {task.tags.slice(0, 3).map((tag) => (
-                                  <Badge key={tag} variant="secondary" className="text-xs py-0.5 px-2">
-                                    {tag}
-                                  </Badge>
-                                ))}
-                                {task.tags.length > 3 && (
-                                  <Badge variant="outline" className="text-xs py-0.5 px-2">
-                                    +{task.tags.length - 3}
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))
-                  )}
-                </div>
-              </ScrollArea>
             </div>
           )}
 
-          {mobileTab === 'inbox' && (
-            <div className="h-full flex flex-col">
-              <div className="p-4 border-b border-border">
-                <h2 className="text-lg font-semibold">Inbox</h2>
-                <p className="text-sm text-muted-foreground">{inboxTasks.length} new tasks</p>
-              </div>
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-3">
-                  {inboxTasks.map((task) => (
-                    <Card key={task.id} className="cursor-pointer" onClick={() => handleTaskSelect(task.id)}>
-                      <CardContent className="p-4">
-                        <h3 className="font-medium text-sm">{task.title}</h3>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {task.tags.map((tag) => (
-                            <Badge key={tag} variant="outline" className="text-xs">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollArea>
-            </div>
-          )}
-
-          {mobileTab === 'projects' && (
-            <div className="h-full flex flex-col">
-              <div className="p-4 border-b border-border">
-                <h2 className="text-lg font-semibold">Projects</h2>
-              </div>
-              <div className="flex-1 flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <Brain className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Projects view coming soon</p>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Mobile Navigation */}
-        <MobileNav 
-          currentTab={mobileTab}
-          onTabChange={setMobileTab}
-          todayCount={todayTasks.length}
-          inboxCount={inboxTasks.length}
+        <MobileNavigation 
+          currentModule={currentModule}
+          onModuleChange={setCurrentModule}
+          className="mt-auto"
         />
 
         {/* Quick Capture Button */}
@@ -833,6 +758,7 @@ export default function Dashboard() {
                 <Button 
                   size="sm"
                   className="bg-primary hover:bg-primary/90 h-7"
+                  onClick={() => workflowMode ? loadSampleWorkflow() : setIsTaskCreateModalOpen(true)}
                   data-testid="button-add-task"
                 >
                   {workflowMode ? "Create Workflow" : "Add Task"}
@@ -847,7 +773,7 @@ export default function Dashboard() {
               currentWorkflow ? (
                 <TraceCanvas
                   flow={currentWorkflow}
-                  selectedNodeId={selectedNodeId}
+                  selectedNodeId={selectedNodeId || undefined}
                   onSelectNode={selectNode}
                   className="h-full"
                 />
@@ -997,7 +923,7 @@ export default function Dashboard() {
           <WorkflowInspector
             flow={currentWorkflow}
             selectedNode={currentWorkflow.nodes.find(n => n.id === selectedNodeId)}
-            runtime={runtime}
+            runtime={runtime || undefined}
             onRunFlow={(mode) => executeWorkflow({ workflow: currentWorkflow, mode })}
             onRunStep={(stepId, mode) => executeStep({ workflow: currentWorkflow, stepId, mode })}
             onExportFlow={exportWorkflow}
@@ -1031,6 +957,13 @@ export default function Dashboard() {
           onClose={handleCloseTaskPanel}
         />
       )}
+
+      {/* Task Create Modal */}
+      <TaskCreateModal
+        isOpen={isTaskCreateModalOpen}
+        onClose={() => setIsTaskCreateModalOpen(false)}
+        projectId={currentProjectId}
+      />
 
       {/* Voice Modal */}
       {isVoiceModalOpen && (

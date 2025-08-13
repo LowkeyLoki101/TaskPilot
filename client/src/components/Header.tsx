@@ -1,4 +1,4 @@
-import { Mic, MicOff } from "lucide-react";
+import { Mic, MicOff, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
@@ -68,9 +68,7 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
                 className="flex items-center space-x-2 text-muted-foreground hover:text-foreground transition-colors"
                 data-testid="button-user-menu"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 gradient-primary rounded-full flex items-center justify-center">
-                  <span className="text-white text-xs sm:text-sm font-medium">JD</span>
-                </div>
+                <User className="h-5 w-5 sm:h-6 sm:w-6 text-zinc-400" />
               </button>
             </div>
           </div>
