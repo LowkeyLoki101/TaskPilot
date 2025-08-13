@@ -13,6 +13,7 @@ import { CommandPalette } from "@/components/CommandPalette";
 import { TraceCanvas } from "@/components/TraceCanvas";
 import { WorkflowInspector } from "@/components/WorkflowInspector";
 import { WorkflowStepRunner } from "@/components/WorkflowStepRunner";
+import CalendarView from "@/components/CalendarView";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useVoice } from "@/hooks/useVoice";
 import { useWorkflow } from "@/hooks/useWorkflow";
@@ -399,6 +400,41 @@ export default function Dashboard() {
               </div>
 
               <div className="flex items-center space-x-3">
+                {!workflowMode && (
+                  <div className="flex items-center border rounded-md">
+                    <Button
+                      variant={currentView === 'mindmap' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCurrentView('mindmap')}
+                      className="rounded-r-none"
+                      data-testid="button-mindmap-view"
+                    >
+                      <Brain className="h-4 w-4 mr-1" />
+                      Mind Map
+                    </Button>
+                    <Button
+                      variant={currentView === 'calendar' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCurrentView('calendar')}
+                      className="rounded-none border-l-0"
+                      data-testid="button-calendar-view"
+                    >
+                      <Calendar className="h-4 w-4 mr-1" />
+                      Calendar
+                    </Button>
+                    <Button
+                      variant={currentView === 'list' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCurrentView('list')}
+                      className="rounded-l-none border-l-0"
+                      data-testid="button-list-view"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-1" />
+                      List
+                    </Button>
+                  </div>
+                )}
+                
                 <Button
                   variant="outline"
                   size="sm"
@@ -494,10 +530,10 @@ export default function Dashboard() {
                   </div>
                 )}
                 {currentView === 'calendar' && (
-                  <div className="p-8 text-center text-muted-foreground">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>Calendar view coming soon...</p>
-                  </div>
+                  <CalendarView 
+                    projectId={currentProjectId}
+                    onTaskSelect={handleTaskSelect}
+                  />
                 )}
               </>
             )}
