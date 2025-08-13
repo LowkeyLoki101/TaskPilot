@@ -379,7 +379,7 @@ export default function Dashboard() {
       />
       
       {/* Desktop Three-Pane Layout */}
-      <div className="h-[calc(100vh-4rem)] grid grid-cols-1 md:grid-cols-[360px,1fr] lg:grid-cols-[360px,1fr,360px]">
+      <div className="h-[calc(100vh-4rem)] grid grid-cols-1 md:grid-cols-[300px,1fr] lg:grid-cols-[300px,1fr,300px]">
         {/* Left Pane - Chat (hidden on mobile, visible on md+) */}
         <ChatPane 
           projectId={currentProjectId}

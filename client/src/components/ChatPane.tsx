@@ -82,31 +82,29 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
   }, [messages]);
 
   return (
-    <div className={`flex flex-col h-full bg-card ${className}`} data-testid="chat-pane">
+    <div className={`flex flex-col max-h-[50vh] bg-card ${className}`} data-testid="chat-pane">
       {/* Header */}
-      <div className="p-4 border-b border-border">
+      <div className="p-2 border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-lg bg-gradient-to-r from-primary to-secondary">
-            <Bot className="h-4 w-4 text-white" />
+          <div className="p-1 rounded bg-gradient-to-r from-primary to-secondary">
+            <Bot className="h-3 w-3 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-sm">AI Assistant</h3>
-            <p className="text-xs text-muted-foreground">Project chat and task management</p>
+            <h3 className="font-medium text-xs">AI Assistant</h3>
           </div>
           <Badge variant="outline" className="ml-auto text-xs">
-            GPT-5
+            {messages.length}
           </Badge>
         </div>
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-        <div className="space-y-4">
+      <ScrollArea className="flex-1 p-2 h-[300px]" ref={scrollAreaRef}>
+        <div className="space-y-2">
           {messages.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Start a conversation with your AI assistant</p>
-              <p className="text-xs mt-1">Ask about tasks, projects, or request help with anything</p>
+            <div className="text-center py-4 text-muted-foreground">
+              <Bot className="h-6 w-6 mx-auto mb-2 opacity-50" />
+              <p className="text-xs">Start a conversation</p>
             </div>
           )}
 
@@ -127,9 +125,9 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
                   )}
                 </div>
                 
-                <Card className={`max-w-[80%] ${msg.role === 'user' ? 'ml-12' : 'mr-12'}`}>
-                  <CardContent className="p-3">
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                <Card className={`max-w-[85%] ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
+                  <CardContent className="p-2">
+                    <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
                     
                     {msg.metadata?.actions && (
                       <div className="mt-2 pt-2 border-t">
@@ -148,8 +146,8 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
                 </Card>
               </div>
               
-              <div className={`text-xs text-muted-foreground px-12 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
-                {new Date(msg.createdAt).toLocaleTimeString()}
+              <div className={`text-xs text-muted-foreground px-8 ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
               </div>
             </div>
           ))}
@@ -172,62 +170,40 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
         </div>
       </ScrollArea>
 
-      <Separator />
-
-      {/* Single Input Form - No Duplication */}
-      <div className="p-4">
+      {/* Input Area */}
+      <div className="p-2 border-t border-border bg-muted/20">
         <form onSubmit={handleSubmit} className="space-y-2">
-          <div className="flex gap-2">
+          <div className="flex gap-1">
             <Input
               value={transcript || message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Ask the AI assistant anything..."
-              className="flex-1"
+              placeholder="Type or use voice..."
+              className="flex-1 h-8 text-xs"
               disabled={sendMessage.isPending}
-              data-testid="chat-input"
+              data-testid="input-chat-message"
             />
-            <ObjectUploader
-              maxNumberOfFiles={3}
-              maxFileSize={10485760} // 10MB
-              onGetUploadParameters={async () => {
-                const response = await fetch("/api/objects/upload", { method: "POST" });
-                const data = await response.json();
-                return { method: "PUT" as const, url: data.uploadURL };
-              }}
-              onComplete={(result: UploadResult<Record<string, unknown>, Record<string, unknown>>) => {
-                if (result.successful.length > 0) {
-                  const fileUrls = result.successful.map(file => file.uploadURL).join(", ");
-                  setMessage(prev => prev + (prev ? "\n" : "") + `📎 Files: ${fileUrls}`);
-                }
-              }}
-              buttonClassName="shrink-0"
-            >
-              <Upload className="h-4 w-4" />
-            </ObjectUploader>
+            
             <Button
               type="button"
+              variant="outline"
+              size="sm"
               onClick={handleVoiceToggle}
-              variant={isListening ? "destructive" : "outline"}
-              size="icon"
-              className="shrink-0"
-              data-testid="voice-toggle"
+              className={`h-8 w-8 p-0 ${isListening ? "bg-red-600 hover:bg-red-700 text-white" : ""}`}
+              data-testid="button-voice-chat"
             >
-              {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              {isListening ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
             </Button>
+            
             <Button 
-              type="submit"
-              disabled={sendMessage.isPending || (!message.trim() && !transcript)}
-              data-testid="send-message"
+              type="submit" 
+              size="sm"
+              className="h-8 w-8 p-0"
+              disabled={!message.trim() && !transcript?.trim() || sendMessage.isPending}
+              data-testid="button-send-message"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-3 w-3" />
             </Button>
           </div>
-          
-          {isListening && (
-            <div className="text-xs text-muted-foreground text-center">
-              🎤 Listening... Speak now or click mic to stop
-            </div>
-          )}
         </form>
       </div>
     </div>

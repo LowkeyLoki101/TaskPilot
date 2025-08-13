@@ -293,7 +293,7 @@ export default function MindMap({ projectId, onTaskSelect }: MindMapProps) {
   };
 
   return (
-    <div className="w-full h-full bg-gradient-to-br from-background via-card to-background relative">
+    <div className="w-full h-[500px] bg-gradient-to-br from-background via-card to-background relative">
       <svg
         ref={svgRef}
         className="w-full h-full"
