@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Header from "@/components/Header";
 
 import MindMap from "@/components/MindMap";
@@ -45,6 +45,7 @@ export default function Dashboard() {
   const [lastMaintenanceRun, setLastMaintenanceRun] = useState<Date | null>(null);
   
   const isMobile = useMobile();
+  const queryClient = useQueryClient();
 
   const { 
     isListening, 
@@ -76,6 +77,14 @@ export default function Dashboard() {
   };
 
   useWebSocket(currentProjectId);
+
+  // Comprehensive Diagnostic System - runs immediately when toggled to full autonomy
+  useEffect(() => {
+    if (autonomyMode === 'full') {
+      console.log('🔍 FULL AUTONOMY ACTIVATED - Running comprehensive diagnostic check...');
+      runComprehensiveDiagnostic();
+    }
+  }, [autonomyMode]);
 
   // Autonomous AI maintenance loop
   useEffect(() => {
@@ -141,6 +150,66 @@ export default function Dashboard() {
     }
   };
 
+  // Comprehensive Diagnostic System - runs immediately on full autonomy toggle
+  const runComprehensiveDiagnostic = async () => {
+    try {
+      console.log('🔍 Running comprehensive workstation diagnostic...');
+      
+      // Call the comprehensive diagnostic endpoint
+      const response = await fetch('/api/comprehensive-diagnostic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: currentProjectId,
+          workstationState: {
+            currentModule,
+            workflowMode,
+            selectedTaskId,
+            lastMaintenanceRun,
+            activeConnections: true,
+            systemUptime: performance.now()
+          },
+          toolsInventory: {
+            voice: isListening,
+            workflows: currentWorkflow !== null,
+            websocket: true,
+            ai: true,
+            storage: true
+          }
+        })
+      });
+
+      if (response.ok) {
+        const diagnostic = await response.json();
+        console.log('📊 Comprehensive diagnostic completed:', diagnostic);
+        
+        // Log diagnostic results
+        const activity = {
+          id: crypto.randomUUID(),
+          action: `🔍 System Diagnostic: ${diagnostic.status} - ${diagnostic.recommendations?.length || 0} recommendations`,
+          timestamp: new Date(),
+          type: 'maintenance' as const,
+          time: new Date().toLocaleTimeString()
+        };
+
+        queryClient.setQueryData(['/api/activity'], (oldData: any[]) => [
+          activity, 
+          ...(oldData || []).slice(0, 19)
+        ]);
+
+        // Schedule AI tasks based on findings
+        if (diagnostic.schedule && diagnostic.schedule.length > 0) {
+          scheduleAITasks(diagnostic.schedule);
+        }
+
+        // Update AI logbook with findings
+        updateAILogbook(diagnostic.findings);
+      }
+    } catch (error) {
+      console.error('❌ Comprehensive diagnostic failed:', error);
+    }
+  };
+
   const performAutonomousActions = async () => {
     try {
       console.log('🤖 Performing autonomous AI actions...');
@@ -155,7 +224,7 @@ export default function Dashboard() {
           context: {
             currentModule,
             workflowMode,
-            recentActivity: aiActivityLog.slice(0, 5).map(a => ({
+            recentActivity: aiActivityLog.slice(0, 5).map((a: any) => ({
               action: a.action,
               type: a.type,
               timestamp: a.timestamp
@@ -182,7 +251,11 @@ export default function Dashboard() {
               time: new Date().toLocaleTimeString()
             };
             
-            setAiActivityLog(prev => [activity, ...prev.slice(0, 19)]);
+            // Update the React Query cache with the new activity
+            queryClient.setQueryData(['/api/activity'], (oldData: any[]) => [
+              activity, 
+              ...(oldData || []).slice(0, 19)
+            ]);
             
             // Execute the actual action if needed
             if (action.execute && typeof window !== 'undefined') {
@@ -199,6 +272,45 @@ export default function Dashboard() {
     } catch (error) {
       console.error('❌ Autonomous actions failed:', error);
     }
+  };
+
+  // AI Scheduling System
+  const scheduleAITasks = (scheduledTasks: any[]) => {
+    console.log('📅 Scheduling AI tasks:', scheduledTasks);
+    scheduledTasks.forEach((task, index) => {
+      setTimeout(() => {
+        const activity = {
+          id: crypto.randomUUID(),
+          action: `📅 Scheduled: ${task.description}`,
+          timestamp: new Date(),
+          type: 'task' as const,
+          time: new Date().toLocaleTimeString()
+        };
+        
+        queryClient.setQueryData(['/api/activity'], (oldData: any[]) => [
+          activity, 
+          ...(oldData || []).slice(0, 19)
+        ]);
+      }, task.delay || (index * 5000)); // Default 5s delay between scheduled tasks
+    });
+  };
+
+  // AI Logbook System
+  const updateAILogbook = (findings: any) => {
+    console.log('📝 Updating AI logbook with findings:', findings);
+    const logbookEntry = {
+      id: crypto.randomUUID(),
+      action: `📝 Logbook: ${findings.summary || 'System analysis completed'}`,
+      timestamp: new Date(),
+      type: 'enhancement' as const,
+      time: new Date().toLocaleTimeString(),
+      findings: findings
+    };
+    
+    queryClient.setQueryData(['/api/activity'], (oldData: any[]) => [
+      logbookEntry, 
+      ...(oldData || []).slice(0, 19)
+    ]);
   };
 
   const getAutonomyColor = () => {
