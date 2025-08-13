@@ -1,6 +1,6 @@
 import { Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoPath from "@assets/IMG_3516_1755107002245.jpg";
+import logoPath from "@assets/Emergent Transparent Logo_1755110400429.png";
 
 interface HeaderProps {
   onVoiceToggle: () => void;
@@ -19,9 +19,6 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
                 src={logoPath} 
                 alt="Emergent Intelligence" 
                 className="h-10 object-contain"
-                style={{ 
-                  filter: 'invert(1) brightness(0) saturate(100%) contrast(1.2)'
-                }}
               />
               <div>
                 <p className="text-sm text-muted-foreground">AI Task Manager</p>

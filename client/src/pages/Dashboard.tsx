@@ -28,7 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download } from "lucide-react";
-import logoPath from "@assets/IMG_3516_1755107002245.jpg";
+import logoPath from "@assets/Emergent Transparent Logo_1755110400429.png";
 import { Switch } from "@/components/ui/switch";
 
 export default function Dashboard() {
