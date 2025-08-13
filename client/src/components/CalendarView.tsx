@@ -104,9 +104,9 @@ export default function CalendarView({ projectId, onTaskSelect }: CalendarViewPr
   };
 
   return (
-    <div className="h-full flex flex-col bg-background" data-testid="calendar-view">
+    <div className="h-[500px] flex flex-col bg-background overflow-hidden" data-testid="calendar-view">
       {/* Calendar Header */}
-      <div className="flex items-center justify-between p-4 border-b">
+      <div className="flex items-center justify-between p-2 border-b flex-shrink-0">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-semibold">
             {monthNames[currentMonth]} {currentYear}
@@ -151,7 +151,7 @@ export default function CalendarView({ projectId, onTaskSelect }: CalendarViewPr
       </div>
 
       {/* Calendar Grid */}
-      <div className="flex-1 p-4">
+      <div className="flex-1 p-2 overflow-hidden">
         <div className="grid grid-cols-7 gap-1 h-full">
           {/* Day headers */}
           {dayNames.map(day => (
@@ -163,7 +163,7 @@ export default function CalendarView({ projectId, onTaskSelect }: CalendarViewPr
           {/* Calendar days */}
           {calendarDays.map((day, index) => {
             if (day === null) {
-              return <div key={`empty-${index}`} className="p-1 min-h-[100px]" />;
+              return <div key={`empty-${index}`} className="p-1 min-h-[80px]" />;
             }
             
             const dayTasks = getTasksForDate(day);
@@ -173,7 +173,7 @@ export default function CalendarView({ projectId, onTaskSelect }: CalendarViewPr
             return (
               <Card 
                 key={uniqueKey} 
-                className={`p-1 min-h-[100px] ${isCurrentDay ? 'ring-2 ring-primary' : ''}`}
+                className={`p-1 min-h-[80px] ${isCurrentDay ? 'ring-2 ring-primary' : ''}`}
                 data-testid={`calendar-day-${day}`}
               >
                 <CardHeader className="p-1">
@@ -213,8 +213,8 @@ export default function CalendarView({ projectId, onTaskSelect }: CalendarViewPr
         </div>
       </div>
 
-      {/* Today's Tasks Sidebar */}
-      <div className="w-80 border-l p-4 absolute right-0 top-0 h-full bg-background">
+      {/* Today's Tasks Sidebar - Hidden in compact view */}
+      <div className="hidden xl:block w-80 border-l p-4 absolute right-0 top-0 h-full bg-background">
         <div className="flex items-center gap-2 mb-4">
           <Calendar className="h-4 w-4" />
           <h3 className="font-medium">Today's Tasks</h3>

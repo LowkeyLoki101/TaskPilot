@@ -1,0 +1,86 @@
+he screenshot plus your spec makes it clear where the UI is falling short of what you want.
+Right now it’s basically just a task board + chat, but your vision is for a full autonomous AI workstation where ChatGPT-5 lives and runs multiple app-like modules inside the same space.
+
+Here’s what we’ll need to fix and extend:
+
+⸻
+
+1. Add the “Workstation” Concept
+
+Instead of the center pane always being a “task board,” it should be a module container that can load:
+	•	Mind Map (current default)
+	•	Calendar
+	•	Task List
+	•	Web Browser view (embedded browser pane with search, open tabs, etc.)
+	•	YouTube / media player
+	•	Reminders view
+	•	AI debugging & diagnostics dashboard
+
+UI change:
+	•	Toolbar at top of center pane becomes a Module Selector rather than just view switchers.
+	•	Each module is a React component mounted into the canvas.
+	•	The AI can change modules autonomously or via user request.
+
+⸻
+
+2. Autonomous AI Mode (Toggle)
+
+You want the AI to:
+	•	Create tasks without waiting for user prompts.
+	•	Self-trigger “maintenance prompts” to check for bugs, reorganize, and optimize.
+	•	Proactively message the user with findings, suggestions, or alerts.
+	•	Still allow chatting while in autonomous mode.
+
+UI change:
+	•	Add Autonomy Toggle in header or Inspector:
+	•	Green = On (AI runs background tasks, messages user, modifies workspace)
+	•	Grey = Off (AI is reactive only)
+	•	Small status label: “Autonomous” or “Manual”
+
+⸻
+
+3. Self-Maintenance Loop
+
+AI should:
+	1.	Periodically check logs, UI state, and API status.
+	2.	Create bug reports or enhancement requests in the task system automatically.
+	3.	Reorganize workspace if cluttered.
+	4.	Suggest next steps to user if idle.
+
+UI change:
+	•	In Inspector → AI Tab, add:
+	•	“Run Maintenance Now” button.
+	•	Last maintenance timestamp.
+	•	Maintenance history list.
+
+⸻
+
+4. Persistent AI Presence
+
+Right now, the left chat pane feels like a separate bot.
+You want GPT-5 to be the system’s brain and live across all modules.
+
+UI change:
+	•	Keep AI chat docked on left, but make it context-aware:
+	•	If you’re in Calendar view, AI messages about scheduling appear inline with dates.
+	•	If you’re in Web Browser, AI can annotate pages.
+	•	Add floating AI presence indicator in bottom-right of center pane for quick interaction.
+
+⸻
+
+5. Inspector Panel Improvements
+	•	Current issue: Only Quick Actions, AI input, and tabs.
+	•	Fix:
+	•	Make Inspector adaptive to current module.
+	•	If in Browser → shows bookmarks, AI “summarize page” button.
+	•	If in Calendar → shows event details + AI “optimize schedule” button.
+
+⸻
+
+6. Proactive Task Creation & Linking
+
+When AI finds a bug or enhancement:
+	•	Auto-add it as a task.
+	•	Link it to the relevant module, bug ID, or screenshot.
+	•	Tag it with priority and due date.
+	•	Option to auto-assign to collaborators.
