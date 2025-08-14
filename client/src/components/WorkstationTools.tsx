@@ -4,11 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { DynamicToolCreator } from "@/components/DynamicToolCreator";
 import { 
   Code2, Database, Globe, FileText, Bot, 
   GitBranch, Terminal, Palette, Shield, 
   Search, Calculator, Mail, Calendar,
-  X, Maximize2, Minimize2, Settings
+  X, Maximize2, Minimize2, Settings, Package
 } from "lucide-react";
 
 interface Tool {
@@ -32,6 +33,14 @@ export function WorkstationTools({ projectId }: { projectId: string }) {
   const [isMaximized, setIsMaximized] = useState(false);
 
   const tools: Tool[] = [
+    {
+      id: "dynamic-creator",
+      name: "Dynamic Tool Creator",
+      icon: Package,
+      description: "Create and test temporary tools in containers",
+      category: "AI",
+      workspace: <DynamicToolCreator projectId={projectId} />
+    },
     {
       id: "code-editor",
       name: "Code Editor",

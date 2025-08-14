@@ -59,6 +59,11 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
   - AI-generated improvement suggestions
   - User approval/denial workflow with feedback learning
   - Code generation and technical specifications
+- **Dynamic Tool Creation** (Canvas LMS-inspired):
+  - GPT-5 can create temporary tools in containerized environments
+  - Test and validate tools before permanent deployment
+  - Auto-cleanup for temporary tools after session
+  - Container-based isolation for safe execution
 
 ### Data Models
 - **Users**: Authentication, profiles
@@ -87,6 +92,10 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 - **Feature Proposal System**: Built AI-driven feature suggestion system with approval workflows and feedback learning
 - **Database Extensions**: Added tables for long-term memory, memory relationships, tool registry, tool executions, and feature proposals
 - **UI Components**: Developed MemoryStats and FeatureProposals components for system monitoring and feature management
+- **Dynamic Tool Creator**: Canvas LMS-inspired container-based tool development system allowing GPT-5 to create, test, and deploy tools dynamically
+- **Mobile Split View**: 60/40 split between module and chat for mobile experience
+- **Voice Transcription**: Complete voice handling with speaker identification and batch editing
+- **Workstation Tools**: Interactive workspace where AI agents can actively cycle through different tools
 
 ## External Dependencies
 

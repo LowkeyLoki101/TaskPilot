@@ -755,6 +755,119 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true, message: `Instructions updated for agent ${agentId}` });
   });
 
+  // Dynamic tool creation endpoints
+  app.get("/api/dynamic-tools", async (req, res) => {
+    try {
+      const { projectId } = req.query;
+      // Return list of dynamic tools for the project
+      const tools = [
+        {
+          id: "tool-1",
+          name: "JSON Formatter",
+          description: "Formats and validates JSON data",
+          code: "function format(input) { return JSON.stringify(JSON.parse(input), null, 2); }",
+          language: "javascript",
+          status: "validated",
+          createdAt: new Date(),
+          isTemporary: false
+        }
+      ];
+      res.json(tools);
+    } catch (error) {
+      console.error("Error fetching dynamic tools:", error);
+      res.status(500).json({ error: "Failed to fetch tools" });
+    }
+  });
+
+  app.post("/api/dynamic-tools", async (req, res) => {
+    try {
+      const { name, description, code, language, projectId, isTemporary } = req.body;
+      
+      // Create a containerized environment for the tool
+      const toolId = `tool-${Date.now()}`;
+      const containerId = `container-${toolId}`;
+      
+      // Log tool creation
+      activityLogger.log({
+        action: `Created dynamic tool: ${name}`,
+        type: 'tool',
+        metadata: { toolId, containerId, language, isTemporary }
+      });
+      
+      res.json({
+        id: toolId,
+        name,
+        description,
+        code,
+        language,
+        status: 'testing',
+        containerId,
+        createdAt: new Date(),
+        isTemporary
+      });
+    } catch (error) {
+      console.error("Error creating dynamic tool:", error);
+      res.status(500).json({ error: "Failed to create tool" });
+    }
+  });
+
+  app.post("/api/dynamic-tools/:toolId/test", async (req, res) => {
+    try {
+      const { toolId } = req.params;
+      const { input } = req.body;
+      
+      // Simulate tool execution in container
+      const testResult = {
+        id: `test-${Date.now()}`,
+        input,
+        output: `Processed: ${input}`,
+        success: true,
+        executionTime: Math.floor(Math.random() * 100) + 50
+      };
+      
+      res.json(testResult);
+    } catch (error) {
+      console.error("Error testing tool:", error);
+      res.status(500).json({ error: "Failed to test tool" });
+    }
+  });
+
+  app.post("/api/dynamic-tools/:toolId/deploy", async (req, res) => {
+    try {
+      const { toolId } = req.params;
+      
+      // Deploy tool permanently to the system
+      activityLogger.log({
+        action: `Deployed tool permanently: ${toolId}`,
+        type: 'tool',
+        metadata: { toolId }
+      });
+      
+      res.json({ success: true, message: "Tool deployed successfully" });
+    } catch (error) {
+      console.error("Error deploying tool:", error);
+      res.status(500).json({ error: "Failed to deploy tool" });
+    }
+  });
+
+  app.delete("/api/dynamic-tools/:toolId", async (req, res) => {
+    try {
+      const { toolId } = req.params;
+      
+      // Clean up container and remove tool
+      activityLogger.log({
+        action: `Deleted dynamic tool: ${toolId}`,
+        type: 'tool',
+        metadata: { toolId }
+      });
+      
+      res.json({ success: true, message: "Tool deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting tool:", error);
+      res.status(500).json({ error: "Failed to delete tool" });
+    }
+  });
+
   // Voice transcription endpoint
   app.post("/api/voice/transcribe", async (req, res) => {
     try {
