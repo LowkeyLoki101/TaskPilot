@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,9 @@ import {
   AlertCircle,
   Edit,
   Bug,
-  Lightbulb
+  Lightbulb,
+  MessageCircle,
+  Info
 } from "lucide-react";
 import { FeatureRequestPanel } from "./FeatureRequestPanel";
 import { ChatPane } from "./ChatPane";
@@ -54,32 +57,17 @@ export function InspectorPane({
 }: InspectorPaneProps) {
   const [activeTab, setActiveTab] = useState("ai");
 
-  // Mock data for demonstration
-  const selectedTask = selectedTaskId ? {
-    id: selectedTaskId,
-    title: "Design new landing page",
-    description: "Create a modern, responsive landing page for the new product launch",
-    status: "in-progress",
-    priority: "high",
-    assignee: "Sarah Chen",
-    dueDate: "2025-08-15",
-    progress: 65,
-    tags: ["design", "frontend", "urgent"],
-    attachments: [
-      { name: "wireframes.figma", type: "design", size: "2.4 MB" },
-      { name: "brand-guidelines.pdf", type: "document", size: "1.8 MB" }
-    ],
-    comments: [
-      { author: "John Doe", content: "Looks great so far!", time: "2 hours ago" },
-      { author: "Sarah Chen", content: "Working on mobile responsiveness", time: "1 hour ago" }
-    ],
-    subtasks: [
-      { title: "Create wireframes", completed: true },
-      { title: "Design desktop layout", completed: true },
-      { title: "Design mobile layout", completed: false },
-      { title: "Add interactions", completed: false }
-    ]
-  } : null;
+  // Fetch real task data when a task is selected
+  const { data: selectedTask } = useQuery({
+    queryKey: [`/api/tasks/${selectedTaskId}`],
+    enabled: !!selectedTaskId
+  });
+
+  // Fetch real task comments
+  const { data: taskComments = [] } = useQuery({
+    queryKey: [`/api/tasks/${selectedTaskId}/comments`],
+    enabled: !!selectedTaskId
+  });
 
   // Convert real activity log to display format
   const agentActivity = aiActivityLog
@@ -312,89 +300,66 @@ export function InspectorPane({
                     <div className="flex items-center gap-2 text-xs">
                       <User className="h-3 w-3 text-muted-foreground" />
                       <span className="text-muted-foreground">Assignee:</span>
-                      <span className="font-medium">{selectedTask.assignee}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-xs">
-                      <Calendar className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-muted-foreground">Due:</span>
-                      <span className="font-medium">{new Date(selectedTask.dueDate).toLocaleDateString()}</span>
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">Progress</span>
-                        <span className="font-medium">{selectedTask.progress}%</span>
-                      </div>
-                      <div className="w-full bg-muted rounded-full h-1.5">
-                        <div 
-                          className="bg-primary h-1.5 rounded-full transition-all"
-                          style={{ width: `${selectedTask.progress}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Tags */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Tag className="h-3 w-3" />
-                      Tags
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {selectedTask.tags.map((tag) => (
-                        <Badge key={tag} variant="outline" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Subtasks */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-medium">Subtasks</span>
-                      <span className="text-xs text-muted-foreground">
-                        {selectedTask.subtasks.filter(s => s.completed).length}/{selectedTask.subtasks.length}
+                      <span className="font-medium">
+                        {selectedTask.assigneeId ? "You" : "Unassigned"}
                       </span>
                     </div>
-                    <div className="space-y-1">
-                      {selectedTask.subtasks.map((subtask, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          {subtask.completed ? (
-                            <CheckCircle2 className="h-3 w-3 text-green-600" />
-                          ) : (
-                            <div className="h-3 w-3 rounded-full border border-muted-foreground" />
-                          )}
-                          <span className={`text-xs ${subtask.completed ? 'line-through text-muted-foreground' : ''}`}>
-                            {subtask.title}
-                          </span>
-                        </div>
-                      ))}
+                    
+                    {selectedTask.dueDate && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-muted-foreground">Due:</span>
+                        <span className="font-medium">{new Date(selectedTask.dueDate).toLocaleDateString()}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-2 text-xs">
+                      <Clock className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-muted-foreground">Created:</span>
+                      <span className="font-medium">{new Date(selectedTask.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
 
                   <Separator />
 
-                  {/* Attachments */}
+                  {/* Task Comments */}
                   <div className="space-y-2">
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Link className="h-3 w-3" />
-                      Attachments ({selectedTask.attachments.length})
+                      <MessageCircle className="h-3 w-3" />
+                      Comments ({taskComments.length})
                     </div>
-                    <div className="space-y-1">
-                      {selectedTask.attachments.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded text-xs">
-                          <span className="font-medium truncate">{file.name}</span>
-                          <span className="text-muted-foreground">{file.size}</span>
+                    <div className="space-y-2">
+                      {taskComments.length > 0 ? taskComments.map((comment) => (
+                        <div key={comment.id} className="bg-muted/50 rounded p-2">
+                          <p className="text-xs">{comment.content}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">
+                            {new Date(comment.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
-                      ))}
+                      )) : (
+                        <p className="text-xs text-muted-foreground">No comments yet</p>
+                      )}
                     </div>
                   </div>
+
+                  <Separator />
+
+                  {/* Task Metadata */}
+                  {selectedTask.metadata && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Info className="h-3 w-3" />
+                        Task Info
+                      </div>
+                      <div className="bg-muted/30 rounded p-2">
+                        <pre className="text-[10px] text-muted-foreground font-mono">
+                          {JSON.stringify(selectedTask.metadata, null, 2)}
+                        </pre>
+                      </div>
+                    </div>
+                  )}
+
+
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
