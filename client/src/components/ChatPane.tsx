@@ -11,6 +11,7 @@ import { Send, Bot, User, Zap, Mic, MicOff, Upload, Paperclip } from "lucide-rea
 import { ObjectUploader } from "@/components/ObjectUploader";
 import type { UploadResult } from "@uppy/core";
 import { useVoice } from "@/hooks/useVoice";
+import ReactMarkdown from "react-markdown";
 
 interface ChatMessage {
   id: string;
@@ -155,7 +156,27 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
                 
                 <Card className={`max-w-[85%] ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                   <CardContent className="p-2">
-                    <p className="text-xs whitespace-pre-wrap break-words">{msg.content}</p>
+                    <div className="text-xs prose prose-xs max-w-none dark:prose-invert">
+                      <ReactMarkdown
+                        components={{
+                          p: ({children}) => <p className="mb-2 last:mb-0">{children}</p>,
+                          strong: ({children}) => <strong className="font-bold">{children}</strong>,
+                          em: ({children}) => <em className="italic">{children}</em>,
+                          ul: ({children}) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
+                          ol: ({children}) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
+                          li: ({children}) => <li className="mb-1">{children}</li>,
+                          code: ({node, inline, className, children, ...props}) => 
+                            inline ? (
+                              <code className="bg-muted px-1 py-0.5 rounded text-xs" {...props}>{children}</code>
+                            ) : (
+                              <pre className="bg-muted p-2 rounded overflow-x-auto"><code className="text-xs" {...props}>{children}</code></pre>
+                            ),
+                          blockquote: ({children}) => <blockquote className="border-l-2 border-primary pl-2 my-2">{children}</blockquote>,
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
+                    </div>
                     
                     {msg.metadata?.actions && (
                       <div className="mt-2 pt-2 border-t">
