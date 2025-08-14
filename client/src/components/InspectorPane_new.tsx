@@ -47,7 +47,6 @@ export function InspectorPane({
   currentModule = "mindmap",
   autonomyMode = "manual",
   aiActivityLog = [],
-  lastMaintenanceRun,
   onAutonomyChange,
   onRunMaintenance,
   projectId,
