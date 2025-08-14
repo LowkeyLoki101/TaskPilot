@@ -195,26 +195,51 @@ export function InspectorPane({
               {/* AI Activity Feed - Takes 30% of space */}
               <div className="flex-1 border-t border-border bg-muted/20 flex flex-col min-h-0">
                 <div className="p-3 space-y-2 flex flex-col h-full">
-                  <div className="flex items-center gap-1 text-xs font-medium">
-                    <Activity className="h-3 w-3 text-primary" />
-                    Recent AI Activity
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-xs font-medium">
+                      <Activity className="h-3 w-3 text-primary" />
+                      Recent AI Activity
+                    </div>
+                    <Badge variant="outline" className="text-xs">
+                      {agentActivity.length} logs
+                    </Badge>
                   </div>
                   <ScrollArea className="flex-1">
                     <div className="space-y-1 pr-2">
                       {agentActivity.length > 0 ? agentActivity.map((activity, index) => (
-                        <div key={index} className="flex items-start gap-2 p-2 bg-background/50 rounded text-xs hover:bg-background/80 transition-colors">
+                        <div key={activity.id || index} className="flex items-start gap-2 p-2 bg-background/50 rounded text-xs hover:bg-background/80 transition-colors border-l-2" style={{
+                          borderLeftColor: activity.type === 'maintenance' ? 'rgb(59 130 246)' :
+                                          activity.type === 'ai_response' ? 'rgb(34 197 94)' :
+                                          activity.type === 'system' ? 'rgb(168 85 247)' :
+                                          activity.type === 'enhancement' ? 'rgb(34 197 94)' : 'rgb(156 163 175)'
+                        }}>
                           <div className={`h-2 w-2 rounded-full mt-1 shrink-0 ${
                             activity.type === 'maintenance' ? 'bg-blue-500' :
-                            activity.type === 'enhancement' ? 'bg-green-500' :
-                            activity.type === 'bug' ? 'bg-red-500' : 'bg-gray-500'
+                            activity.type === 'ai_response' ? 'bg-green-500' :
+                            activity.type === 'system' ? 'bg-purple-500' :
+                            activity.type === 'enhancement' ? 'bg-green-500' : 'bg-gray-500'
                           }`} />
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium">{activity.action}</p>
-                            <p className="text-muted-foreground">{activity.time}</p>
+                            <p className="font-medium leading-tight">{activity.action}</p>
+                            <p className="text-muted-foreground leading-tight">{activity.time}</p>
+                            {activity.details && (
+                              <p className="text-muted-foreground text-[10px] mt-1 italic">
+                                {typeof activity.details === 'object' ? 
+                                  Object.entries(activity.details).slice(0, 2).map(([key, value]) => 
+                                    `${key}: ${String(value).substring(0, 20)}`
+                                  ).join(' • ') : 
+                                  String(activity.details).substring(0, 40)
+                                }
+                              </p>
+                            )}
                           </div>
                         </div>
                       )) : (
-                        <p className="text-xs text-muted-foreground p-2">No recent AI activity</p>
+                        <div className="text-center py-4">
+                          <Activity className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                          <p className="text-xs text-muted-foreground">No recent AI activity</p>
+                          <p className="text-xs text-muted-foreground mt-1">System is running in {autonomyMode} mode</p>
+                        </div>
                       )}
                     </div>
                   </ScrollArea>
