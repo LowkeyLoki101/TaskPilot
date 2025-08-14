@@ -28,10 +28,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Users, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download, Bot } from "lucide-react";
+import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Users, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download, Bot, Wrench } from "lucide-react";
 import { AgentDashboard } from '@/components/AgentDashboard';
 import { TaskCreateModal } from '@/components/TaskCreateModal';
 import { AIBrowser } from '@/components/AIBrowser';
+import { VoiceTranscription } from '@/components/VoiceTranscription';
+import { WorkstationTools } from '@/components/WorkstationTools';
 import logoPath from "@assets/Emergent Transparent Logo_1755110400429.png";
 import { Switch } from "@/components/ui/switch";
 
@@ -522,53 +524,78 @@ export default function Dashboard() {
           isVoiceActive={isListening}
         />
         
-        {/* Mobile Content Container */}
-        <div className="flex-1 overflow-y-auto">
-          {currentModule === 'mindmap' && (
-            <div className="h-full p-4">
-              <MindMap
-                projectId={currentProjectId}
-                onTaskSelect={setSelectedTaskId}
-              />
-            </div>
-          )}
-          {currentModule === 'calendar' && (
-            <div className="h-full">
-              <CalendarView 
-                projectId={currentProjectId}
-                onTaskSelect={setSelectedTaskId}
-              />
-            </div>
-          )}
-          {currentModule === 'tasks' && (
-            <div className="h-full">
-              <TaskListView 
-                projectId={currentProjectId}
-                onTaskSelect={setSelectedTaskId}
-              />
-            </div>
-          )}
-          {currentModule === 'agents' && (
-            <div className="h-full p-4">
-              <AgentDashboard />
-            </div>
-          )}
-          {currentModule === 'diagnostics' && (
-            <div className="h-full p-4">
-              <DiagnosticsPanel 
-                aiActivityLog={aiActivityLog}
-                lastMaintenanceRun={lastMaintenanceRun}
-                autonomyMode={autonomyMode}
-                onRunMaintenance={runMaintenanceCheck}
-              />
-            </div>
-          )}
-          {currentModule === 'browser' && (
-            <div className="h-full">
-              <AIBrowser />
-            </div>
-          )}
-
+        {/* Mobile Content Container with Split View */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Top Module View - 60% */}
+          <div className="flex-[3] overflow-y-auto border-b">
+            {currentModule === 'mindmap' && (
+              <div className="h-full p-4">
+                <MindMap
+                  projectId={currentProjectId}
+                  onTaskSelect={setSelectedTaskId}
+                  enableEditing={true}
+                />
+              </div>
+            )}
+            {currentModule === 'calendar' && (
+              <div className="h-full">
+                <CalendarView 
+                  projectId={currentProjectId}
+                  onTaskSelect={setSelectedTaskId}
+                />
+              </div>
+            )}
+            {currentModule === 'tasks' && (
+              <div className="h-full">
+                <TaskListView 
+                  projectId={currentProjectId}
+                  onTaskSelect={setSelectedTaskId}
+                />
+              </div>
+            )}
+            {currentModule === 'agents' && (
+              <div className="h-full p-4">
+                <AgentDashboard />
+              </div>
+            )}
+            {currentModule === 'diagnostics' && (
+              <div className="h-full p-4">
+                <DiagnosticsPanel 
+                  aiActivityLog={aiActivityLog}
+                  lastMaintenanceRun={lastMaintenanceRun}
+                  autonomyMode={autonomyMode}
+                  onRunMaintenance={runMaintenanceCheck}
+                />
+              </div>
+            )}
+            {currentModule === 'browser' && (
+              <div className="h-full">
+                <AIBrowser />
+              </div>
+            )}
+            {currentModule === 'transcription' && (
+              <div className="h-full p-4">
+                <VoiceTranscription />
+              </div>
+            )}
+            {currentModule === 'tools' && (
+              <div className="h-full p-4">
+                <WorkstationTools projectId={currentProjectId} />
+              </div>
+            )}
+          </div>
+          
+          {/* Bottom Chat/Inspector - 40% */}
+          <div className="flex-[2] overflow-y-auto bg-muted/20">
+            <InspectorPane
+              selectedTaskId={selectedTaskId}
+              currentModule="chat"
+              autonomyMode={autonomyMode}
+              aiActivityLog={aiActivityLog}
+              lastMaintenanceRun={lastMaintenanceRun}
+              onRunMaintenance={runMaintenanceCheck}
+            />
+          </div>
         </div>
 
         {/* Mobile Navigation */}
@@ -706,6 +733,16 @@ export default function Dashboard() {
                     >
                       <Bot className="h-3 w-3 mr-1" />
                       Agents
+                    </Button>
+                    <Button
+                      variant={currentModule === 'tools' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setCurrentModule('tools')}
+                      className="h-7 px-2"
+                      data-testid="module-tools"
+                    >
+                      <Wrench className="h-3 w-3 mr-1" />
+                      Tools
                     </Button>
                   </div>
                 )}
@@ -916,6 +953,11 @@ export default function Dashboard() {
                 {currentModule === 'agents' && (
                   <div className="h-full p-6 overflow-y-auto">
                     <AgentDashboard />
+                  </div>
+                )}
+                {currentModule === 'tools' && (
+                  <div className="h-full">
+                    <WorkstationTools projectId={currentProjectId} />
                   </div>
                 )}
               </>

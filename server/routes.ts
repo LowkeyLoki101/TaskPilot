@@ -746,13 +746,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     const { instructions } = req.body;
     
     // Log the instruction update
-    activityLogger.logActivity({
+    activityLogger.log({
       action: `Updated instructions for agent: ${agentId}`,
       type: 'agent',
       metadata: { agentId, instructions }
     });
     
     res.json({ success: true, message: `Instructions updated for agent ${agentId}` });
+  });
+
+  // Voice transcription endpoint
+  app.post("/api/voice/transcribe", async (req, res) => {
+    try {
+      // This would integrate with OpenAI Whisper or similar service
+      // For now, return sample transcription with speaker identification
+      const segments = [
+        {
+          id: "seg-1",
+          speakerId: "speaker-1",
+          text: "We need to redesign the dashboard to be more mobile-friendly.",
+          timestamp: 0,
+          duration: 3.5
+        },
+        {
+          id: "seg-2", 
+          speakerId: "speaker-2",
+          text: "I agree. Let's prioritize the chat interface and file upload features.",
+          timestamp: 3.5,
+          duration: 4.2
+        },
+        {
+          id: "seg-3",
+          speakerId: "speaker-1",
+          text: "Also, make sure the AI agents can actively manage projects and cycle through tools.",
+          timestamp: 7.7,
+          duration: 5.1
+        }
+      ];
+      
+      const speakers = [
+        { id: "speaker-1", name: "John", color: "bg-blue-500" },
+        { id: "speaker-2", name: "Sarah", color: "bg-green-500" }
+      ];
+      
+      res.json({ segments, speakers });
+    } catch (error) {
+      console.error("Error transcribing audio:", error);
+      res.status(500).json({ error: "Failed to transcribe audio" });
+    }
   });
 
   // Health Check
