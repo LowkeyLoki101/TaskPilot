@@ -32,7 +32,7 @@ import {
   Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useWorkflow, useWorkflowExecution } from "@/hooks/useWorkflowApi";
+import { useWorkflow, useWorkflowExecution, useWorkflowExecutionApi } from "@/hooks/useWorkflowApi";
 import { Tool as ToolType, WorkflowStep as WorkflowStepType, CreateWorkflowRequest } from "@shared/workflowTypes";
 import { toast } from "@/hooks/use-toast";
 

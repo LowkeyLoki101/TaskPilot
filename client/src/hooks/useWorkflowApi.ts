@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -110,4 +111,25 @@ export function useBrowserSession() {
     executeBrowserAction,
     closeSession
   };
+}
+
+export function useWorkflowExecutionApi(projectId: string) {
+  const [isRunning, setIsRunning] = useState(false);
+
+  const execute = async (payload: { steps: any[]; tools: any[] }) => {
+    setIsRunning(true);
+    try {
+      const r = await fetch(`/api/projects/${projectId}/workflows/execute`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json();
+      return data;
+    } finally {
+      setIsRunning(false);
+    }
+  };
+
+  return { execute, isRunning };
 }
