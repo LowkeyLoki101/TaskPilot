@@ -150,9 +150,9 @@ export function InspectorPane({
 
         <div className="flex-1 overflow-hidden">
           <TabsContent value="ai" className="h-full mt-0 flex flex-col">
-            <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex-1 flex flex-col overflow-hidden">
               {/* AI Chat Interface */}
-              <div className="flex-1 min-h-0">
+              <div className="flex-1 overflow-hidden">
                 <ChatPane 
                   projectId={projectId}
                   className="h-full border-none"
@@ -331,7 +331,10 @@ export function InspectorPane({
           <TabsContent value="diagnostics" className="h-full mt-0">
             <div className="h-full p-4">
               <DiagnosticsPanel 
-                aiActivityLog={aiActivityLog}
+                aiActivityLog={aiActivityLog.map(log => ({
+                  ...log,
+                  timestamp: typeof log.timestamp === 'string' ? new Date(log.timestamp) : log.timestamp
+                }))}
                 lastMaintenanceRun={lastMaintenanceRun}
                 autonomyMode={autonomyMode}
                 onRunMaintenance={onRunMaintenance}

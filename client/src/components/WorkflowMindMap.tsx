@@ -162,15 +162,27 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
     setCurrentStep(null);
   };
 
+  const [editingTool, setEditingTool] = useState<string | null>(null);
+  const [toolName, setToolName] = useState('');
+  
   const addCustomTool = () => {
     const newTool: Tool = {
       id: `custom-${Date.now()}`,
       type: 'custom',
       name: 'Custom Tool',
       icon: Wrench,
-      description: 'Configure this tool'
+      description: 'Click to configure'
     };
     setTools([...tools, newTool]);
+    setEditingTool(newTool.id);
+    setToolName(newTool.name);
+  };
+  
+  const updateToolName = (toolId: string, newName: string) => {
+    setTools(tools.map(tool => 
+      tool.id === toolId ? { ...tool, name: newName } : tool
+    ));
+    setEditingTool(null);
   };
 
   return (
@@ -258,13 +270,36 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                       >
                         <Card 
                           className="w-32 h-24 cursor-pointer hover:shadow-lg transition-all border-muted-foreground/20 hover:border-primary/50"
-                          draggable
+                          draggable={editingTool !== tool.id}
                           onDragStart={() => setDraggedTool(tool.id)}
                           onDragEnd={() => setDraggedTool(null)}
+                          onClick={() => {
+                            if (tool.type === 'custom' && editingTool !== tool.id) {
+                              setEditingTool(tool.id);
+                              setToolName(tool.name);
+                            }
+                          }}
                         >
                           <CardContent className="p-3 text-center">
                             <IconComponent className="h-6 w-6 mx-auto mb-1 text-primary" />
-                            <p className="text-xs font-medium">{tool.name}</p>
+                            {editingTool === tool.id ? (
+                              <input
+                                type="text"
+                                value={toolName}
+                                onChange={(e) => setToolName(e.target.value)}
+                                onBlur={() => updateToolName(tool.id, toolName)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    updateToolName(tool.id, toolName);
+                                  }
+                                }}
+                                className="text-xs font-medium bg-transparent border-b border-primary text-center w-full outline-none"
+                                autoFocus
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            ) : (
+                              <p className="text-xs font-medium">{tool.name}</p>
+                            )}
                           </CardContent>
                         </Card>
                         
