@@ -366,6 +366,7 @@ export default function Dashboard() {
                     <TaskListView 
                       projectId={currentProjectId}
                       onTaskSelect={setSelectedTaskId}
+                      onAddTask={() => setIsTaskCreateModalOpen(true)}
                     />
                   </div>
                 )}

@@ -18,12 +18,43 @@ interface Task {
 interface TaskListViewProps {
   projectId: string;
   onTaskSelect: (taskId: string) => void;
+  onAddTask?: () => void;
 }
 
-export function TaskListView({ projectId, onTaskSelect }: TaskListViewProps) {
+export function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListViewProps) {
   const { data: tasks = [], isLoading, refetch } = useQuery<Task[]>({
     queryKey: [`/api/projects/${projectId}/tasks`],
   });
+
+  const toggleTaskComplete = async (taskId: string, completed: boolean) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: !completed, status: !completed ? 'completed' : 'todo' })
+      });
+      
+      if (response.ok) {
+        await refetch();
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
+  };
+
+  const deleteTask = async (taskId: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        await refetch();
+      }
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
+  };
 
   const deleteAllTasks = async () => {
     if (!window.confirm('Are you sure you want to delete ALL tasks? This cannot be undone.')) {
@@ -38,7 +69,6 @@ export function TaskListView({ projectId, onTaskSelect }: TaskListViewProps) {
       if (response.ok) {
         const result = await response.json();
         console.log(`Deleted ${result.deletedCount} tasks`);
-        // Refresh task list
         await refetch();
       } else {
         console.error('Failed to delete tasks');
@@ -107,7 +137,12 @@ export function TaskListView({ projectId, onTaskSelect }: TaskListViewProps) {
               <X className="h-3 w-3 mr-1" />
               Delete All
             </Button>
-            <Button size="sm" variant="outline" data-testid="button-add-task">
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={onAddTask}
+              data-testid="button-add-task"
+            >
               <Plus className="h-3 w-3 mr-1" />
               Add Task
             </Button>
@@ -133,7 +168,16 @@ export function TaskListView({ projectId, onTaskSelect }: TaskListViewProps) {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 flex-1">
-                      <div className="w-4 h-4 border-2 border-primary rounded-sm flex-shrink-0"></div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleTaskComplete(task.id, task.completed);
+                        }}
+                        className="w-4 h-4 border-2 border-primary rounded-sm flex-shrink-0 hover:bg-primary/10 transition-colors"
+                        data-testid={`task-checkbox-${task.id}`}
+                      >
+                        {task.completed && <CheckCircle className="w-3 h-3 text-primary" />}
+                      </button>
                       <div className="min-w-0 flex-1">
                         <h4 className="text-sm font-medium truncate">{task.title}</h4>
                         {task.description && (
@@ -155,9 +199,21 @@ export function TaskListView({ projectId, onTaskSelect }: TaskListViewProps) {
                         </div>
                       </div>
                     </div>
-                    <Badge variant={getPriorityColor(task.priority)} className="text-xs ml-2">
-                      {task.priority}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getPriorityColor(task.priority)} className="text-xs">
+                        {task.priority}
+                      </Badge>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTask(task.id);
+                        }}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        data-testid={`task-delete-${task.id}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -173,31 +229,58 @@ export function TaskListView({ projectId, onTaskSelect }: TaskListViewProps) {
               {completedTasks.map((task) => (
                 <div 
                   key={task.id}
-                  className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors bg-muted/30"
+                  className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors opacity-75"
                   onClick={() => onTaskSelect(task.id)}
                   data-testid={`task-item-${task.id}`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 flex-1">
-                      <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleTaskComplete(task.id, task.completed);
+                        }}
+                        className="w-4 h-4 border-2 border-primary rounded-sm flex-shrink-0 hover:bg-primary/10 transition-colors bg-primary"
+                        data-testid={`task-checkbox-${task.id}`}
+                      >
+                        <CheckCircle className="w-3 h-3 text-primary-foreground" />
+                      </button>
                       <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-medium line-through text-muted-foreground truncate">
-                          {task.title}
-                        </h4>
+                        <h4 className="text-sm font-medium truncate line-through text-muted-foreground">{task.title}</h4>
                         {task.description && (
-                          <p className="text-xs text-muted-foreground line-through truncate">
-                            {task.description}
-                          </p>
+                          <p className="text-xs text-muted-foreground truncate line-through">{task.description}</p>
                         )}
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground mt-1">
-                          <Clock className="h-3 w-3" />
-                          Completed {formatDate(task.createdAt)}
+                        <div className="flex items-center gap-3 mt-1">
+                          {task.dueDate && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <CalendarIcon className="h-3 w-3" />
+                              {formatDate(task.dueDate)}
+                            </div>
+                          )}
+                          {task.assignee && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <User className="h-3 w-3" />
+                              {task.assignee}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-xs ml-2">
-                      Done
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={getPriorityColor(task.priority)} className="text-xs">
+                        {task.priority}
+                      </Badge>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteTask(task.id);
+                        }}
+                        className="text-muted-foreground hover:text-destructive transition-colors"
+                        data-testid={`task-delete-${task.id}`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -207,14 +290,18 @@ export function TaskListView({ projectId, onTaskSelect }: TaskListViewProps) {
           {/* Empty State */}
           {tasks.length === 0 && (
             <div className="text-center py-12">
-              <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-semibold mb-2">No tasks yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first task to get started with project management
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+              <h3 className="text-lg font-medium text-muted-foreground mb-2">No tasks yet</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Create your first task to get started with project management.
               </p>
-              <Button>
+              <Button 
+                variant="outline" 
+                onClick={onAddTask}
+                data-testid="button-add-first-task"
+              >
                 <Plus className="h-4 w-4 mr-2" />
-                Create First Task
+                Add Your First Task
               </Button>
             </div>
           )}
