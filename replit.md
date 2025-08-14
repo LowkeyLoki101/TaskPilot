@@ -40,11 +40,12 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 - **Environment Variables**: Secure configuration management
 
 ### AI Integration
-- **Dual-Model Architecture**: GPT-4o for real-time voice, GPT-5 for logic/management
-- **Enhanced AI Assistant**: Complete website control, automation, function calling
-- **Context Awareness**: Project-specific AI assistance
-- **Proactive Suggestions**: Based on user behavior
-- **Workflow Generation**: Natural language to FlowScript conversion
+- **Primary Model**: GPT-5 with full system awareness and building capabilities
+- **Enhanced AI Assistant**: Complete system control with ability to actually build tools, not just describe them
+- **Context Awareness**: Fully aware of Emergent Intelligence environment, capabilities, and available systems
+- **Tool Creation**: Can dynamically create and deploy real tools through Tool Registry
+- **Agent Orchestration**: Direct control of 5 specialized agents (Research, Planning, Coding, Testing, Documentation)
+- **Workflow Generation**: Natural language to executable workflows with real-time execution
 - **AI Workflow Engine**: Automated execution with debugging
 - **Autonomous AI Workstation**: Three-tier autonomy system (Manual, Semi, Full) with modular center pane and self-maintenance loops.
 - **Advanced Memory System**: 
