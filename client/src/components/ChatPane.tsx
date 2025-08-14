@@ -111,7 +111,7 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
   }, [messages]);
 
   return (
-    <div className={`flex flex-col bg-card h-full ${className}`} data-testid="chat-pane">
+    <div className={`flex flex-col bg-card h-full overflow-hidden ${className}`} data-testid="chat-pane">
       {/* Header */}
       <div className="p-2 border-b border-border">
         <div className="flex items-center gap-2">
@@ -128,8 +128,8 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-2 overflow-y-auto" ref={scrollAreaRef}>
-        <div className="space-y-2">
+      <ScrollArea className="flex-1 min-h-0 p-2" ref={scrollAreaRef}>
+        <div className="space-y-2 pr-3">
           {messages.length === 0 && (
             <div className="text-center py-4 text-muted-foreground">
               <Bot className="h-6 w-6 mx-auto mb-2 opacity-50" />

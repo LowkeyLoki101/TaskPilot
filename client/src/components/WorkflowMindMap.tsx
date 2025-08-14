@@ -259,7 +259,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
   };
 
   return (
-    <div className={cn("h-full flex flex-col bg-gradient-to-br from-background to-muted/20 overflow-hidden", className)}>
+    <div className={cn("h-full flex flex-col bg-gradient-to-br from-background to-muted/20", className)}>
       {/* Header Controls */}
       <div className="p-4 border-b border-border bg-background/95">
         <div className="flex items-center justify-between mb-4">
@@ -307,7 +307,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
 
       {/* Mind Map Canvas */}
       <div className="flex-1 relative overflow-auto">
-        <div className="absolute inset-0 flex items-center justify-center">
+        <div className="absolute inset-0 flex items-center justify-center min-h-full p-8">
           
           {/* Central Project Node */}
           <div className="relative">
@@ -322,7 +322,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
             {/* Tools Display */}
             {showTools && (
               <div className="absolute top-full mt-8 left-1/2 transform -translate-x-1/2">
-                <div className="flex flex-wrap gap-4 max-w-2xl">
+                <div className="relative">
                   {tools.map((tool, index) => {
                     const angle = (index * 60) - 90; // Spread tools in arc
                     const radius = 200;

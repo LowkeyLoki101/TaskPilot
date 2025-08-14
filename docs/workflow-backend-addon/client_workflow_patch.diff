@@ -1,0 +1,172 @@
+--- a/client/src/components/WorkflowMindMap.tsx
++++ b/client/src/components/WorkflowMindMap.tsx
+@@
+-import React, { useState, useEffect, useRef } from "react";
++import React, { useState, useEffect, useRef } from "react";
++import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+@@
+ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) {
+@@
+-  const [tools, setTools] = useState<Tool[]>(defaultTools);
+-  const [steps, setSteps] = useState<WorkflowStep[]>([]);
++  const qc = useQueryClient();
++  const [tools, setTools] = useState<Tool[]>(defaultTools);
++  const [steps, setSteps] = useState<WorkflowStep[]>([]);
++
++  // Load existing workflow
++  const wfQuery = useQuery({
++    queryKey: ["workflow", projectId],
++    queryFn: async () => {
++      const r = await fetch(`/api/projects/${projectId}/workflow`);
++      const j = await r.json();
++      return j.workflow as { projectId: string; tools: Tool[]; steps: WorkflowStep[] };
++    }
++  });
++  useEffect(() => {
++    if (wfQuery.data) {
++      setTools(wfQuery.data.tools?.length ? wfQuery.data.tools : defaultTools);
++      setSteps(wfQuery.data.steps || []);
++    }
++  }, [wfQuery.data]);
++
++  const saveMutation = useMutation({
++    mutationFn: async (payload: { tools: Tool[]; steps: WorkflowStep[] }) => {
++      const r = await fetch(`/api/projects/${projectId}/workflow`, {
++        method: "POST",
++        headers: { "Content-Type": "application/json" },
++        body: JSON.stringify({ projectId, ...payload })
++      });
++      return r.json();
++    },
++    onSuccess: () => qc.invalidateQueries({ queryKey: ["workflow", projectId] }),
++  });
++  const saveWorkflow = (t=tools, s=steps) => saveMutation.mutate({ tools: t, steps: s });
+@@
+-  const addNewStep = () => {
++  const addNewStep = () => {
+     const newStep: WorkflowStep = {
+       id: `step-${Date.now()}`,
+       title: `Step ${steps.length + 1}`,
+       description: 'Describe what happens in this step',
+       tools: []
+     };
+-    setSteps([...steps, newStep]);
++    const next = [...steps, newStep];
++    setSteps(next);
++    saveWorkflow(tools, next);
+   };
+@@
+-  const deleteStep = (stepId: string) => {
+-    setSteps(steps.filter(step => step.id !== stepId));
++  const deleteStep = (stepId: string) => {
++    const next = steps.filter(step => step.id !== stepId);
++    setSteps(next);
++    saveWorkflow(tools, next);
+   };
+@@
+-  const addToolToStep = (stepId: string, toolId: string) => {
+-    setSteps(steps.map(step => 
+-      step.id === stepId 
+-        ? { ...step, tools: [...step.tools, toolId] }
+-        : step
+-    ));
++  const addToolToStep = (stepId: string, toolId: string) => {
++    const next = steps.map(step => 
++      step.id === stepId 
++        ? { ...step, tools: [...new Set([...step.tools, toolId])] }
++        : step
++    );
++    setSteps(next);
++    saveWorkflow(tools, next);
+   };
+@@
+-  const removeToolFromStep = (stepId: string, toolId: string) => {
+-    setSteps(steps.map(step => 
+-      step.id === stepId 
+-        ? { ...step, tools: step.tools.filter(t => t !== toolId) }
+-        : step
+-    ));
++  const removeToolFromStep = (stepId: string, toolId: string) => {
++    const next = steps.map(step => 
++      step.id === stepId 
++        ? { ...step, tools: step.tools.filter(t => t !== toolId) }
++        : step
++    );
++    setSteps(next);
++    saveWorkflow(tools, next);
+   };
+@@
+-  const updateToolName = (toolId: string, newName: string) => {
+-    setTools(tools.map(tool => 
+-      tool.id === toolId ? { ...tool, name: newName } : tool
+-    ));
++  const updateToolName = (toolId: string, newName: string) => {
++    const next = tools.map(tool => 
++      tool.id === toolId ? { ...tool, name: newName } : tool
++    );
++    setTools(next);
++    saveWorkflow(next, steps);
+     setEditingTool(null);
+   };
+@@
+-  const saveToolConfig = () => {
++  const saveToolConfig = () => {
+     if (configuredTool) {
+-      setTools(tools.map(tool => 
+-        tool.id === configuredTool.id 
+-          ? { ...tool, config: toolConfig, description: getToolDescription(toolConfig) }
+-          : tool
+-      ));
++      const next = tools.map(tool => 
++        tool.id === configuredTool.id 
++          ? { ...tool, config: toolConfig, description: getToolDescription(toolConfig) }
++          : tool
++      );
++      setTools(next);
++      saveWorkflow(next, steps);
+     }
+     setShowConfigDialog(false);
+   };
+@@
+-  const beginWorkflow = async () => {
++  const beginWorkflow = async () => {
+     if (steps.length === 0) {
+       alert('Please add some steps first');
+       return;
+     }
+ 
+     setIsExecuting(true);
+     setCurrentStep(0);
+-    
+-    // Execute step by step
+-    for (let i = 0; i < steps.length; i++) {
+-      setCurrentStep(i);
+-      const step = steps[i];
+-      
+-      // Show only tools for current step
+-      console.log(`Executing Step ${i + 1}: ${step.title}`);
+-      console.log('Required tools:', step.tools.map(toolId => 
+-        tools.find(t => t.id === toolId)?.name
+-      ).join(', '));
+-      
+-      // Simulate step execution
+-      await new Promise(resolve => setTimeout(resolve, 2000));
+-      
+-      setSteps(prev => prev.map((s, idx) => 
+-        idx === i ? { ...s, completed: true } : s
+-      ));
+-    }
+-    
++
++    // execute on server
++    const res = await fetch(`/api/projects/${projectId}/workflow/execute`, { method: "POST" });
++    const data = await res.json();
++    if (data?.ok) {
++      const results = data.results as Array<{ stepId: string }>;
++      const done = new Set(results.map(r => r.stepId));
++      setSteps(prev => prev.map(s => ({ ...s, completed: done.has(s.id) })));
++    }
++
+     setIsExecuting(false);
+     setCurrentStep(null);
+   };
