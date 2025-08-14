@@ -1,8 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Target, 
   Plus, 
@@ -18,7 +23,11 @@ import {
   ArrowDown,
   GripVertical,
   X,
-  Sparkles
+  Sparkles,
+  Code,
+  Send,
+  File,
+  Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -28,7 +37,17 @@ interface Tool {
   name: string;
   icon: any;
   description: string;
-  config?: any;
+  config?: {
+    action?: 'api_call' | 'file_operation' | 'ai_prompt' | 'data_transform' | 'notification';
+    endpoint?: string;
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+    outputVariable?: string;
+    prompt?: string;
+    fileOperation?: 'read' | 'write' | 'delete' | 'copy';
+    filePath?: string;
+  };
 }
 
 interface WorkflowStep {
@@ -164,6 +183,11 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
 
   const [editingTool, setEditingTool] = useState<string | null>(null);
   const [toolName, setToolName] = useState('');
+  const [showConfigDialog, setShowConfigDialog] = useState(false);
+  const [configuredTool, setConfiguredTool] = useState<Tool | null>(null);
+  const [toolConfig, setToolConfig] = useState<Tool['config']>({
+    action: 'ai_prompt'
+  });
   
   const addCustomTool = () => {
     const newTool: Tool = {
@@ -171,7 +195,8 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
       type: 'custom',
       name: 'Custom Tool',
       icon: Wrench,
-      description: 'Click to configure'
+      description: 'Click to configure',
+      config: { action: 'ai_prompt' }
     };
     setTools([...tools, newTool]);
     setEditingTool(newTool.id);
@@ -183,6 +208,52 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
       tool.id === toolId ? { ...tool, name: newName } : tool
     ));
     setEditingTool(null);
+  };
+  
+  const openToolConfig = (tool: Tool) => {
+    setConfiguredTool(tool);
+    setToolConfig(tool.config || { action: 'ai_prompt' });
+    setShowConfigDialog(true);
+  };
+  
+  const saveToolConfig = () => {
+    if (configuredTool) {
+      setTools(tools.map(tool => 
+        tool.id === configuredTool.id 
+          ? { ...tool, config: toolConfig, description: getToolDescription(toolConfig) }
+          : tool
+      ));
+    }
+    setShowConfigDialog(false);
+  };
+  
+  const getToolDescription = (config?: Tool['config']) => {
+    if (!config?.action) return 'Click to configure';
+    switch (config.action) {
+      case 'api_call':
+        return `API: ${config.method || 'GET'} ${config.endpoint || 'Not configured'}`;
+      case 'file_operation':
+        return `File: ${config.fileOperation || 'read'} ${config.filePath || 'Not configured'}`;
+      case 'ai_prompt':
+        return `AI: ${config.prompt?.substring(0, 30) || 'Generate content'}...`;
+      case 'data_transform':
+        return 'Transform data between formats';
+      case 'notification':
+        return 'Send notification or alert';
+      default:
+        return 'Click to configure';
+    }
+  };
+  
+  const getActionIcon = (action?: string) => {
+    switch (action) {
+      case 'api_call': return Globe;
+      case 'file_operation': return File;
+      case 'ai_prompt': return Brain;
+      case 'data_transform': return Code;
+      case 'notification': return Bell;
+      default: return Wrench;
+    }
   };
 
   return (
@@ -274,14 +345,32 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                           onDragStart={() => setDraggedTool(tool.id)}
                           onDragEnd={() => setDraggedTool(null)}
                           onClick={() => {
-                            if (tool.type === 'custom' && editingTool !== tool.id) {
-                              setEditingTool(tool.id);
-                              setToolName(tool.name);
+                            if (tool.type === 'custom') {
+                              if (editingTool === tool.id) {
+                                // If already editing name, save and open config
+                                updateToolName(tool.id, toolName);
+                                openToolConfig(tool);
+                              } else {
+                                // Start editing name
+                                setEditingTool(tool.id);
+                                setToolName(tool.name);
+                              }
+                            }
+                          }}
+                          onDoubleClick={() => {
+                            if (tool.type === 'custom') {
+                              openToolConfig(tool);
                             }
                           }}
                         >
                           <CardContent className="p-3 text-center">
-                            <IconComponent className="h-6 w-6 mx-auto mb-1 text-primary" />
+                            {tool.config?.action ? (
+                              React.createElement(getActionIcon(tool.config.action), {
+                                className: "h-6 w-6 mx-auto mb-1 text-primary"
+                              })
+                            ) : (
+                              <IconComponent className="h-6 w-6 mx-auto mb-1 text-primary" />
+                            )}
                             {editingTool === tool.id ? (
                               <input
                                 type="text"
@@ -291,6 +380,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
                                     updateToolName(tool.id, toolName);
+                                    openToolConfig(tool);
                                   }
                                 }}
                                 className="text-xs font-medium bg-transparent border-b border-primary text-center w-full outline-none"
@@ -298,7 +388,14 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                                 onClick={(e) => e.stopPropagation()}
                               />
                             ) : (
-                              <p className="text-xs font-medium">{tool.name}</p>
+                              <>
+                                <p className="text-xs font-medium">{tool.name}</p>
+                                {tool.type === 'custom' && (
+                                  <p className="text-[10px] text-muted-foreground mt-1 truncate">
+                                    {tool.description}
+                                  </p>
+                                )}
+                              </>
                             )}
                           </CardContent>
                         </Card>
@@ -471,6 +568,180 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
           </div>
         </div>
       </div>
+
+      {/* Tool Configuration Dialog */}
+      <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Configure Tool: {configuredTool?.name}</DialogTitle>
+            <DialogDescription>
+              Define what this tool does and how it integrates with your workflow
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="action">Tool Action</Label>
+              <Select 
+                value={toolConfig?.action} 
+                onValueChange={(value) => setToolConfig({...toolConfig, action: value as any})}
+              >
+                <SelectTrigger id="action">
+                  <SelectValue placeholder="Select an action" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ai_prompt">
+                    <div className="flex items-center gap-2">
+                      <Brain className="h-4 w-4" />
+                      AI Content Generation
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="api_call">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      API Call
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="file_operation">
+                    <div className="flex items-center gap-2">
+                      <File className="h-4 w-4" />
+                      File Operation
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="data_transform">
+                    <div className="flex items-center gap-2">
+                      <Code className="h-4 w-4" />
+                      Data Transformation
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="notification">
+                    <div className="flex items-center gap-2">
+                      <Bell className="h-4 w-4" />
+                      Send Notification
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* AI Prompt Configuration */}
+            {toolConfig?.action === 'ai_prompt' && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="prompt">AI Prompt Template</Label>
+                  <Textarea
+                    id="prompt"
+                    value={toolConfig.prompt || ''}
+                    onChange={(e) => setToolConfig({...toolConfig, prompt: e.target.value})}
+                    placeholder="Example: Generate a professional flyer for {{product_name}} featuring {{key_features}}"
+                    className="min-h-[100px]"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Use {`{{variable}}`} for dynamic content that will be filled during workflow execution
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* API Configuration */}
+            {toolConfig?.action === 'api_call' && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="endpoint">API Endpoint</Label>
+                  <Input
+                    id="endpoint"
+                    value={toolConfig.endpoint || ''}
+                    onChange={(e) => setToolConfig({...toolConfig, endpoint: e.target.value})}
+                    placeholder="https://api.example.com/endpoint"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="method">HTTP Method</Label>
+                  <Select 
+                    value={toolConfig.method || 'GET'} 
+                    onValueChange={(value) => setToolConfig({...toolConfig, method: value})}
+                  >
+                    <SelectTrigger id="method">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="GET">GET</SelectItem>
+                      <SelectItem value="POST">POST</SelectItem>
+                      <SelectItem value="PUT">PUT</SelectItem>
+                      <SelectItem value="DELETE">DELETE</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="body">Request Body (JSON)</Label>
+                  <Textarea
+                    id="body"
+                    value={toolConfig.body || ''}
+                    onChange={(e) => setToolConfig({...toolConfig, body: e.target.value})}
+                    placeholder='{"key": "value"}'
+                    className="font-mono text-sm"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* File Operation Configuration */}
+            {toolConfig?.action === 'file_operation' && (
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="fileOp">Operation Type</Label>
+                  <Select 
+                    value={toolConfig.fileOperation || 'read'} 
+                    onValueChange={(value) => setToolConfig({...toolConfig, fileOperation: value as any})}
+                  >
+                    <SelectTrigger id="fileOp">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="read">Read File</SelectItem>
+                      <SelectItem value="write">Write File</SelectItem>
+                      <SelectItem value="delete">Delete File</SelectItem>
+                      <SelectItem value="copy">Copy File</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="filePath">File Path</Label>
+                  <Input
+                    id="filePath"
+                    value={toolConfig.filePath || ''}
+                    onChange={(e) => setToolConfig({...toolConfig, filePath: e.target.value})}
+                    placeholder="/path/to/file.txt"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Output Variable */}
+            <div>
+              <Label htmlFor="output">Output Variable Name</Label>
+              <Input
+                id="output"
+                value={toolConfig?.outputVariable || ''}
+                onChange={(e) => setToolConfig({...toolConfig, outputVariable: e.target.value})}
+                placeholder="result_data"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                This variable will be available to subsequent tools in the workflow
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowConfigDialog(false)}>
+                Cancel
+              </Button>
+              <Button onClick={saveToolConfig}>
+                Save Configuration
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
