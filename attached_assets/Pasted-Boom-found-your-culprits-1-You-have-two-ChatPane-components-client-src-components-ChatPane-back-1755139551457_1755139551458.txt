@@ -1,0 +1,133 @@
+Boom—found your culprits:
+	1.	You have two ChatPane components:
+
+client/src/components/ChatPane_backup.tsx
+client/src/components/ChatPane.tsx
+
+If the app (or some import path) ever points at the backup file, your edits to the other file won’t show. (That’s why it feels like “nothing changes.”)
+	2.	Your server crashed with EADDRINUSE :5000 — there’s already a server bound to 5000. When that happens, dev tooling can serve stale code and your “fixes” don’t apply.
+
+Let’s clean this up in a tight sequence.
+
+⸻
+
+Fix sequence (do these in order)
+
+1) Kill the ghost server on :5000
+
+Choose any of these:
+
+Linux/Replit shell
+
+# show the PID
+lsof -i :5000 -t || fuser 5000/tcp || true
+
+# kill it
+kill -9 $(lsof -i :5000 -t) 2>/dev/null || fuser -k 5000/tcp 2>/dev/null || true
+
+Or just press the red Stop button in Replit if it’s visible, then re-run dev.
+
+If you’re running a websocket server too, killing that PID is enough.
+
+⸻
+
+2) Remove the duplicate ChatPane
+
+Pick the ChatPane.tsx you want to keep (I recommend the version with a sticky header, sticky composer, and min-h-0 flex-1 overflow-auto messages). Then:
+
+git rm -f client/src/components/ChatPane_backup.tsx 2>/dev/null || rm -f client/src/components/ChatPane_backup.tsx
+
+Having both files around makes it too easy for an import to drift. Kill the backup. If you want a backup, commit it or stash it—don’t keep a second exported component in the tree.
+
+⸻
+
+3) Apply two tiny UI patches (so the layout stops overlapping)
+
+InspectorPane.tsx
+
+- <TabsList className="grid w-full grid-cols-4">
++ <TabsList className="grid w-full grid-cols-5">
+
+- <div className={`flex flex-col h-full bg-card border-l border-border ${className}`} data-testid="inspector-pane">
++ <div className={`flex flex-col h-full bg-card border-l border-border overflow-hidden ${className}`} data-testid="inspector-pane">
+
+These prevent the tab row from wrapping/bleeding behind chat and keep the inner content from spilling out.
+
+ChatPane.tsx (ensure this structure exists in the version you kept):
+	•	Sticky header: sticky top-0 z-10 bg-card/95
+	•	Scrollable middle: min-h-0 flex-1 overflow-auto
+	•	Sticky composer: sticky bottom-0 z-10
+	•	Auto-scroll with a bottomRef
+
+If your kept file still uses Radix ScrollArea, I strongly suggest swapping it for a plain div scroller as I showed earlier—more reliable and less magic.
+
+⸻
+
+4) Clean build caches & restart dev
+
+rm -rf node_modules/.cache .vite .parcel-cache .next dist build 2>/dev/null || true
+pnpm i --silent
+pnpm run dev
+
+Open the browser DevTools → Console. If you see errors, paste them to me; otherwise proceed.
+
+⸻
+
+5) Sanity check the right file is live
+
+Add a one-liner in client/src/components/ChatPane.tsx:
+
+useEffect(() => { console.log("ChatPane LIVE"); }, []);
+
+Reload the app. If you don’t see “ChatPane LIVE” in the console, the app isn’t rendering the file you edited (wrong import path). Search where ChatPane is imported and confirm it points to ./ChatPane.
+
+⸻
+
+6) (Optional but recommended) Shell grid so left never slides under chat
+
+If tools still “run under” the chat, your app shell needs a true two-column layout:
+
+// AppShell or the page wrapper
+<div
+  className="h-screen w-screen grid"
+  style={{ gridTemplateRows: "56px 1fr", gridTemplateColumns: "1fr 380px" }}
+>
+  <header className="col-span-2 h-14 sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+    {/* toolbar */}
+  </header>
+
+  <main className="row-start-2 col-start-1 overflow-hidden">
+    <div className="h-full overflow-auto pr-[380px]">
+      {/* left content */}
+    </div>
+  </main>
+
+  <aside className="row-start-2 col-start-2 border-l border-border bg-card z-30">
+    {/* InspectorPane / Chat */}
+  </aside>
+</div>
+
+That pr-[380px] reserves space so nothing hides beneath the chat column.
+
+⸻
+
+Why this was happening (plain English)
+	•	With two ChatPane files, the agent could be “fixing” the wrong one. You’d see edits in logs and still no visual change.
+	•	With the port already bound, your dev server dies and the browser keeps showing the last good bundle. It looks like “nothing changed,” because… nothing changed.
+	•	Without the grid shell and proper min-h-0 rules, sections fight over height and overlap.
+
+⸻
+
+Quick smoke after the fixes
+	1.	Start dev; confirm no EADDRINUSE error.
+	2.	In the browser console, see “ChatPane LIVE”.
+	3.	Chat header stays fixed, messages scroll, composer stays visible.
+	4.	Only 3–4 modules visible; arrows scroll the rest.
+	5.	Nothing slides under the right panel.
+
+If anything still misbehaves, give me:
+	•	the current ChatPane.tsx (the single one),
+	•	your layout/shell component (the wrapper that places left/right),
+	•	and the browser console error (if any).
+
+We’ll pin it in one more pass.

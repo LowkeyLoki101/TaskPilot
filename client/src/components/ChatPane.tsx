@@ -102,11 +102,9 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
+    console.log("✅ ChatPane LIVE - Updated version running!");
     if (scrollAreaRef.current) {
-      const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
-      if (scrollElement) {
-        scrollElement.scrollTop = scrollElement.scrollHeight;
-      }
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
 
@@ -128,7 +126,7 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
       </div>
 
       {/* Messages - Scrollable area with padding for input */}
-      <div className="flex-1 overflow-y-auto pb-20" ref={scrollAreaRef}>
+      <div className="flex-1 overflow-y-auto pb-[120px]" ref={scrollAreaRef}>
         <div className="p-2">
           <div className="space-y-2 pr-3">
           {messages.length === 0 && (
