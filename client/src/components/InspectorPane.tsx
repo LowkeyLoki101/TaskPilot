@@ -83,13 +83,15 @@ export function InspectorPane({
 
   // Convert real activity log to display format
   const agentActivity = aiActivityLog
-    .filter(log => log.type !== 'task') // Filter out regular tasks to show AI-specific actions
-    .slice(0, 10) // Show latest 10 activities
+    .slice(0, 20) // Show latest 20 activities - ALL autonomous AI actions
     .map(log => ({
+      id: log.id,
       action: log.action,
       time: formatTimeAgo(log.timestamp),
+      timestamp: log.timestamp,
       status: "success",
-      type: log.type
+      type: log.type,
+      details: log.details
     }));
 
   // Show user task-related activities
@@ -195,50 +197,69 @@ export function InspectorPane({
               {/* AI Activity Feed - Takes 30% of space */}
               <div className="flex-1 border-t border-border bg-muted/20 flex flex-col min-h-0">
                 <div className="p-3 space-y-2 flex flex-col h-full">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-1 text-xs font-medium">
-                      <Activity className="h-3 w-3 text-primary" />
-                      Recent AI Activity
+                      <Activity className="h-3 w-3 text-primary animate-pulse" />
+                      Complete AI Activity Log
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      {agentActivity.length} logs
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {agentActivity.length} total
+                      </Badge>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-5 px-2 text-xs"
+                        onClick={() => window.location.reload()}
+                      >
+                        Refresh
+                      </Button>
+                    </div>
                   </div>
                   <ScrollArea className="flex-1">
                     <div className="space-y-1 pr-2">
-                      {agentActivity.length > 0 ? agentActivity.map((activity, index) => (
-                        <div key={activity.id || index} className="flex items-start gap-2 p-2 bg-background/50 rounded text-xs hover:bg-background/80 transition-colors border-l-2" style={{
-                          borderLeftColor: activity.type === 'maintenance' ? 'rgb(59 130 246)' :
-                                          activity.type === 'ai_response' ? 'rgb(34 197 94)' :
-                                          activity.type === 'system' ? 'rgb(168 85 247)' :
-                                          activity.type === 'enhancement' ? 'rgb(34 197 94)' : 'rgb(156 163 175)'
-                        }}>
-                          <div className={`h-2 w-2 rounded-full mt-1 shrink-0 ${
-                            activity.type === 'maintenance' ? 'bg-blue-500' :
-                            activity.type === 'ai_response' ? 'bg-green-500' :
-                            activity.type === 'system' ? 'bg-purple-500' :
-                            activity.type === 'enhancement' ? 'bg-green-500' : 'bg-gray-500'
-                          }`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium leading-tight">{activity.action}</p>
-                            <p className="text-muted-foreground leading-tight">{activity.time}</p>
-                            {activity.details && (
-                              <p className="text-muted-foreground text-[10px] mt-1 italic">
-                                {typeof activity.details === 'object' ? 
-                                  Object.entries(activity.details).slice(0, 2).map(([key, value]) => 
-                                    `${key}: ${String(value).substring(0, 20)}`
-                                  ).join(' • ') : 
-                                  String(activity.details).substring(0, 40)
-                                }
+                      {agentActivity.length > 0 ? agentActivity.map((activity, index) => {
+                        const isRecent = new Date().getTime() - new Date(activity.timestamp).getTime() < 60000; // Less than 1 minute
+                        return (
+                          <div key={activity.id || index} className={`flex items-start gap-2 p-3 rounded-lg text-xs transition-all border ${
+                            isRecent ? 'bg-primary/5 border-primary/20 shadow-sm' : 'bg-background/50 border-border/50'
+                          } hover:bg-background/80`}>
+                            <div className={`h-2 w-2 rounded-full mt-1.5 shrink-0 ${
+                              activity.type === 'maintenance' ? 'bg-blue-500' :
+                              activity.type === 'ai_response' ? 'bg-green-500' :
+                              activity.type === 'system' ? 'bg-purple-500' :
+                              activity.type === 'enhancement' ? 'bg-green-500' : 'bg-gray-500'
+                            } ${isRecent ? 'animate-pulse' : ''}`} />
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="font-semibold leading-tight text-foreground">{activity.action}</p>
+                                <Badge variant="outline" className="text-[10px] shrink-0">
+                                  {activity.type}
+                                </Badge>
+                              </div>
+                              <p className="text-muted-foreground text-[11px]">
+                                {activity.time} • ID: {activity.id?.substring(0, 8)}...
                               </p>
-                            )}
+                              {activity.details && (
+                                <div className="bg-muted/30 rounded p-2 mt-1">
+                                  <p className="text-[10px] text-muted-foreground font-mono">
+                                    {typeof activity.details === 'object' ? 
+                                      JSON.stringify(activity.details, null, 2).substring(0, 200) + '...' :
+                                      String(activity.details)
+                                    }
+                                  </p>
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )) : (
-                        <div className="text-center py-4">
-                          <Activity className="h-8 w-8 mx-auto mb-2 opacity-30" />
-                          <p className="text-xs text-muted-foreground">No recent AI activity</p>
-                          <p className="text-xs text-muted-foreground mt-1">System is running in {autonomyMode} mode</p>
+                        );
+                      }) : (
+                        <div className="text-center py-8 space-y-3">
+                          <Activity className="h-12 w-12 mx-auto text-muted-foreground/30" />
+                          <div>
+                            <p className="text-sm text-muted-foreground font-medium">No AI activity yet</p>
+                            <p className="text-xs text-muted-foreground">System running in {autonomyMode} mode</p>
+                          </div>
                         </div>
                       )}
                     </div>
