@@ -693,7 +693,7 @@ export default function Dashboard() {
                     
                     <div 
                       id="module-selector"
-                      className="flex items-center border rounded-lg p-1 bg-background max-w-[220px] overflow-x-hidden scrollbar-hide"
+                      className="flex items-center border rounded-lg p-1 bg-background max-w-[400px] overflow-x-hidden scrollbar-hide"
                       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                       <Button
