@@ -16,6 +16,7 @@ interface Task {
   priority: string;
   position?: { x: number; y: number };
   dueDate?: string;
+  parentId?: string;
 }
 
 export default function MindMap({ projectId, onTaskSelect }: MindMapProps) {
@@ -73,34 +74,76 @@ export default function MindMap({ projectId, onTaskSelect }: MindMapProps) {
       .attr("offset", "100%")
       .attr("style", "stop-color:hsl(262, 83%, 58%);stop-opacity:0.5");
 
-    // Prepare data for D3
+    // Separate main tasks and subtasks
+    const mainTasks = tasks.filter(task => !task.parentId);
+    const subtasks = tasks.filter(task => task.parentId);
+    
+    // Prepare data for D3 - hierarchical structure
     const nodeData = [
+      // Central project node
       {
-        id: "central",
-        title: "Project Launch",
-        description: "Q1 2024 Product Release",
+        id: "project-central",
+        title: "Emergent Intelligence",
+        description: "AI Task Management Platform", 
         x: width / 2,
         y: height / 2,
-        type: "central",
+        type: "project",
         status: "active"
       },
-      ...tasks.map((task, index) => {
-        // If task has no position, distribute evenly in circle
-        const angle = (index * 2 * Math.PI) / tasks.length;
-        const radius = 250;
+      // Main tasks around the center
+      ...mainTasks.map((task, index) => {
+        const angle = (index * 2 * Math.PI) / mainTasks.length;
+        const radius = 200;
         return {
           ...task,
-          x: task.position?.x || (width / 2 + Math.cos(angle) * radius),
-          y: task.position?.y || (height / 2 + Math.sin(angle) * radius),
-          type: "task"
+          x: task.position?.x ? task.position.x + width/2 : (width / 2 + Math.cos(angle) * radius),
+          y: task.position?.y ? task.position.y + height/2 : (height / 2 + Math.sin(angle) * radius),
+          type: "main-task"
         };
+      }),
+      // Subtasks around their parent tasks
+      ...subtasks.map(subtask => {
+        const parentTask = mainTasks.find(t => t.id === subtask.parentId);
+        const parentIndex = mainTasks.findIndex(t => t.id === subtask.parentId);
+        const siblingSubtasks = subtasks.filter(s => s.parentId === subtask.parentId);
+        const subtaskIndex = siblingSubtasks.findIndex(s => s.id === subtask.id);
+        
+        if (parentTask) {
+          const parentAngle = (parentIndex * 2 * Math.PI) / mainTasks.length;
+          const parentX = parentTask.position?.x ? parentTask.position.x + width/2 : (width / 2 + Math.cos(parentAngle) * 200);
+          const parentY = parentTask.position?.y ? parentTask.position.y + height/2 : (height / 2 + Math.sin(parentAngle) * 200);
+          
+          // Position subtasks around their parent
+          const subtaskAngle = parentAngle + (subtaskIndex * Math.PI / 2) - (Math.PI / 4);
+          const subtaskRadius = 120;
+          
+          return {
+            ...subtask,
+            x: subtask.position?.x ? subtask.position.x + width/2 : (parentX + Math.cos(subtaskAngle) * subtaskRadius),
+            y: subtask.position?.y ? subtask.position.y + height/2 : (parentY + Math.sin(subtaskAngle) * subtaskRadius),
+            type: "subtask",
+            parentId: subtask.parentId
+          };
+        }
+        return { ...subtask, type: "subtask", x: width/2, y: height/2 };
       })
     ];
-
-    const linkData = tasks.map(task => ({
-      source: "central",
-      target: task.id
-    }));
+    
+    // Create links: project to main tasks, and main tasks to subtasks
+    const linkData = [
+      // Links from project to main tasks
+      ...mainTasks.map(task => ({
+        source: "project-central",
+        target: task.id,
+        type: "project-to-task"
+      })),
+      // Links from main tasks to subtasks
+      ...subtasks.map(subtask => ({
+        source: subtask.parentId!,
+        target: subtask.id,
+        type: "task-to-subtask"
+      }))
+    ];
 
     // Create force simulation
     const simulation = d3.forceSimulation(nodeData)
