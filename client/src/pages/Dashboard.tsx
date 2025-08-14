@@ -28,7 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Users, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download, Bot, Wrench } from "lucide-react";
+import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Users, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download, Bot, Wrench, ChevronLeft, ChevronRight } from "lucide-react";
 import { AgentDashboard } from '@/components/AgentDashboard';
 import { TaskCreateModal } from '@/components/TaskCreateModal';
 import { AIBrowser } from '@/components/AIBrowser';
@@ -670,79 +670,115 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Center Section - Module Selector */}
+              {/* Center Section - Module Selector with Scroll */}
               <div className="flex items-center space-x-1">
                 {!workflowMode && (
-                  <div className="flex items-center border rounded-lg p-1 bg-muted/50">
+                  <div className="flex items-center space-x-1">
                     <Button
-                      variant={currentModule === 'mindmap' ? 'default' : 'ghost'}
+                      variant="ghost"
                       size="sm"
-                      onClick={() => setCurrentModule('mindmap')}
-                      className="h-7 px-2"
-                      data-testid="module-mindmap"
+                      onClick={() => {
+                        const container = document.getElementById('module-selector');
+                        if (container) {
+                          container.scrollBy({ left: -150, behavior: 'smooth' });
+                        }
+                      }}
+                      className="h-7 w-7 p-0"
+                      data-testid="module-scroll-left"
                     >
-                      <Brain className="h-3 w-3 mr-1" />
-                      Mind Map
+                      <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant={currentModule === 'calendar' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setCurrentModule('calendar')}
-                      className="h-7 px-2"
-                      data-testid="module-calendar"
+                    
+                    <div 
+                      id="module-selector"
+                      className="flex items-center border rounded-lg p-1 bg-muted/50 max-w-[400px] overflow-x-auto scrollbar-hide"
+                      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
-                      <Calendar className="h-3 w-3 mr-1" />
-                      Calendar
-                    </Button>
+                      <Button
+                        variant={currentModule === 'mindmap' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setCurrentModule('mindmap')}
+                        className="h-7 px-2 shrink-0"
+                        data-testid="module-mindmap"
+                      >
+                        <Brain className="h-3 w-3 mr-1" />
+                        Mind Map
+                      </Button>
+                      <Button
+                        variant={currentModule === 'calendar' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setCurrentModule('calendar')}
+                        className="h-7 px-2 shrink-0"
+                        data-testid="module-calendar"
+                      >
+                        <Calendar className="h-3 w-3 mr-1" />
+                        Calendar
+                      </Button>
+                      <Button
+                        variant={currentModule === 'tasks' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setCurrentModule('tasks')}
+                        className="h-7 px-2 shrink-0"
+                        data-testid="module-tasks"
+                      >
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Tasks
+                      </Button>
+                      <Button
+                        variant={currentModule === 'browser' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setCurrentModule('browser')}
+                        className="h-7 px-2 shrink-0"
+                        data-testid="module-browser"
+                      >
+                        <Globe className="h-3 w-3 mr-1" />
+                        Browser
+                      </Button>
+                      <Button
+                        variant={currentModule === 'diagnostics' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setCurrentModule('diagnostics')}
+                        className="h-7 px-2 shrink-0"
+                        data-testid="module-diagnostics"
+                      >
+                        <BarChart3 className="h-3 w-3 mr-1" />
+                        Debug
+                      </Button>
+                      <Button
+                        variant={currentModule === 'agents' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setCurrentModule('agents')}
+                        className="h-7 px-2 shrink-0"
+                        data-testid="module-agents"
+                      >
+                        <Bot className="h-3 w-3 mr-1" />
+                        Agents
+                      </Button>
+                      <Button
+                        variant={currentModule === 'tools' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setCurrentModule('tools')}
+                        className="h-7 px-2 shrink-0"
+                        data-testid="module-tools"
+                      >
+                        <Wrench className="h-3 w-3 mr-1" />
+                        Tools
+                      </Button>
+                    </div>
+                    
                     <Button
-                      variant={currentModule === 'tasks' ? 'default' : 'ghost'}
+                      variant="ghost"
                       size="sm"
-                      onClick={() => setCurrentModule('tasks')}
-                      className="h-7 px-2"
-                      data-testid="module-tasks"
+                      onClick={() => {
+                        const container = document.getElementById('module-selector');
+                        if (container) {
+                          container.scrollBy({ left: 150, behavior: 'smooth' });
+                        }
+                      }}
+                      className="h-7 w-7 p-0"
+                      data-testid="module-scroll-right"
                     >
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Tasks
-                    </Button>
-                    <Button
-                      variant={currentModule === 'browser' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setCurrentModule('browser')}
-                      className="h-7 px-2"
-                      data-testid="module-browser"
-                    >
-                      <Globe className="h-3 w-3 mr-1" />
-                      Browser
-                    </Button>
-                    <Button
-                      variant={currentModule === 'diagnostics' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setCurrentModule('diagnostics')}
-                      className="h-7 px-2"
-                      data-testid="module-diagnostics"
-                    >
-                      <BarChart3 className="h-3 w-3 mr-1" />
-                      Debug
-                    </Button>
-                    <Button
-                      variant={currentModule === 'agents' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setCurrentModule('agents')}
-                      className="h-7 px-2"
-                      data-testid="module-agents"
-                    >
-                      <Bot className="h-3 w-3 mr-1" />
-                      Agents
-                    </Button>
-                    <Button
-                      variant={currentModule === 'tools' ? 'default' : 'ghost'}
-                      size="sm"
-                      onClick={() => setCurrentModule('tools')}
-                      className="h-7 px-2"
-                      data-testid="module-tools"
-                    >
-                      <Wrench className="h-3 w-3 mr-1" />
-                      Tools
+                      <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
