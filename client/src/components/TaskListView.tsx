@@ -173,10 +173,14 @@ export function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListVie
                           e.stopPropagation();
                           toggleTaskComplete(task.id, task.completed);
                         }}
-                        className="w-4 h-4 border-2 border-primary rounded-sm flex-shrink-0 hover:bg-primary/10 transition-colors"
+                        className="w-6 h-6 border-2 border-primary rounded flex-shrink-0 hover:bg-primary/10 transition-colors flex items-center justify-center bg-background"
                         data-testid={`task-checkbox-${task.id}`}
                       >
-                        {task.completed && <CheckCircle className="w-3 h-3 text-primary" />}
+                        {task.completed ? (
+                          <CheckCircle className="w-4 h-4 text-primary fill-current" />
+                        ) : (
+                          <div className="w-3 h-3 border border-muted-foreground rounded-sm"></div>
+                        )}
                       </button>
                       <div className="min-w-0 flex-1">
                         <h4 className="text-sm font-medium truncate">{task.title}</h4>
@@ -240,10 +244,10 @@ export function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListVie
                           e.stopPropagation();
                           toggleTaskComplete(task.id, task.completed);
                         }}
-                        className="w-4 h-4 border-2 border-primary rounded-sm flex-shrink-0 hover:bg-primary/10 transition-colors bg-primary"
+                        className="w-6 h-6 border-2 border-primary rounded flex-shrink-0 hover:bg-primary/10 transition-colors flex items-center justify-center bg-primary"
                         data-testid={`task-checkbox-${task.id}`}
                       >
-                        <CheckCircle className="w-3 h-3 text-primary-foreground" />
+                        <CheckCircle className="w-4 h-4 text-primary-foreground fill-current" />
                       </button>
                       <div className="min-w-0 flex-1">
                         <h4 className="text-sm font-medium truncate line-through text-muted-foreground">{task.title}</h4>
