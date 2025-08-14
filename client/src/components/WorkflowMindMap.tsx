@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { MindMapFeatureCreator } from "./MindMapFeatureCreator";
+import { InteractiveWorkspaceOrchestrator } from "./InteractiveWorkspaceOrchestrator";
 import { 
   Target, 
   Plus, 
@@ -279,16 +280,18 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
   };
 
   return (
-    <div className={cn("h-full flex flex-col bg-gradient-to-br from-background to-muted/20", className)}>
-      {/* Header Controls */}
-      <div className="p-4 border-b border-border bg-background/95">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-xl font-bold text-foreground">Workflow Orchestrator</h2>
-            <p className="text-sm text-muted-foreground mt-1">
-              Click "Tools" to see available tools • Click "Steps" to build your workflow
-            </p>
-          </div>
+    <div className={cn("h-full flex bg-gradient-to-br from-background to-muted/20", className)}>
+      {/* Left: Interactive Workspace */}
+      <div className="flex-1 flex flex-col">
+        {/* Header Controls */}
+        <div className="p-4 border-b border-border bg-background/95">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-xl font-bold text-foreground">Workflow Orchestrator</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Interactive workspace that responds to your commands
+              </p>
+            </div>
           <div className="flex items-center space-x-2">
             <Button
               variant={showTools ? "default" : "outline"}
@@ -867,6 +870,19 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
           </Card>
         </div>
       )}
+      
+      {/* Right: Interactive Command Center */}
+      <div className="w-80 border-l border-border">
+        <InteractiveWorkspaceOrchestrator 
+          onActionComplete={(action) => {
+            console.log('Action completed:', action);
+            if (action.type === 'tool_creation') {
+              // Add the created tool to the workspace
+              addCustomTool();
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }
