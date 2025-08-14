@@ -1,0 +1,55 @@
+--- a/client/src/components/AIBrowser.tsx
++++ b/client/src/components/AIBrowser.tsx
+@@
+-    // Simulate loading
+-    setTimeout(() => {
+-      setTabs(prev => prev.map(tab => 
+-        tab.id === activeTabId 
+-          ? { 
+-              ...tab, 
+-              isLoading: false, 
+-              title: new URL(url).hostname,
+-              content: `Content from ${url}`,
+-              isSecure: url.startsWith("https://")
+-            }
+-          : tab
+-      ));
+-    }, 1000);
++    // Real navigate via agent browser
++    try {
++      await agent({ type: "navigate", url });
++      const shot = await agent({ type: "screenshot" });
++      setTabs(prev => prev.map(tab => 
++        tab.id === activeTabId 
++          ? { 
++              ...tab, 
++              isLoading: false, 
++              title: new URL(url).hostname,
++              content: shot.imageBase64,
++              isSecure: url.startsWith("https://")
++            }
++          : tab
++      ));
++    } catch (e) {
++      toast({ title: "Navigation failed", description: String(e), variant: "destructive" });
++      setTabs(prev => prev.map(tab => 
++        tab.id === activeTabId ? { ...tab, isLoading: false } : tab
++      ));
++    }
+@@
+-            <div className="h-full p-4">
+-              <div className="bg-muted/20 rounded-lg p-8 text-center">
+-                ...
+-              </div>
+-            </div>
++            <div className="h-full flex items-center justify-center bg-black">
++              {activeTab?.content ? (
++                <img
++                  src={`data:image/png;base64,${activeTab.content}`}
++                  alt="Live view"
++                  className="max-w-full max-h-full object-contain"
++                />
++              ) : (
++                <div className="text-muted-foreground">Navigate to start</div>
++              )}
++            </div>

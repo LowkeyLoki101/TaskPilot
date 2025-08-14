@@ -156,7 +156,7 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
                 
                 <Card className={`max-w-[85%] ${msg.role === 'user' ? 'ml-8' : 'mr-8'}`}>
                   <CardContent className="p-2">
-                    <p className="text-xs whitespace-pre-wrap">{msg.content}</p>
+                    <p className="text-xs whitespace-pre-wrap break-words">{msg.content}</p>
                     
                     {msg.metadata?.actions && (
                       <div className="mt-2 pt-2 border-t">

@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
@@ -108,6 +108,8 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
   const [steps, setSteps] = useState<WorkflowStep[]>([]);
   const [draggedTool, setDraggedTool] = useState<string | null>(null);
   const [draggedStep, setDraggedStep] = useState<string | null>(null);
+  const [editingStepDesc, setEditingStepDesc] = useState<string | null>(null);
+  const [stepDescription, setStepDescription] = useState<string>('');
   const [isExecuting, setIsExecuting] = useState(false);
   const [currentStep, setCurrentStep] = useState<number | null>(null);
 
@@ -440,15 +442,17 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
             {showSteps && (
               <div className="absolute left-full ml-8 top-1/2 transform -translate-y-1/2">
                 <div className="w-80">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-semibold">Workflow Steps</h4>
-                    <Button onClick={addNewStep} size="sm" variant="outline">
-                      <Plus className="h-3 w-3 mr-1" />
-                      Add Step
-                    </Button>
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold">Workflow Steps</h4>
+                      <Button onClick={addNewStep} size="sm" variant="primary">
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Step
+                      </Button>
+                    </div>
                   </div>
                   
-                  <ScrollArea className="h-96">
+                  <ScrollArea className="h-[400px]">
                     <div className="space-y-3">
                       {steps.map((step, index) => (
                         <Card 
@@ -489,9 +493,44 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                               </Button>
                             </div>
                             
-                            <p className="text-sm text-muted-foreground mt-1 mb-3">
-                              {step.description}
-                            </p>
+                            {editingStepDesc === step.id ? (
+                              <Input
+                                type="text"
+                                value={stepDescription}
+                                onChange={(e) => setStepDescription(e.target.value)}
+                                onBlur={() => {
+                                  setSteps(steps.map(s => 
+                                    s.id === step.id 
+                                      ? { ...s, description: stepDescription }
+                                      : s
+                                  ));
+                                  setEditingStepDesc(null);
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    setSteps(steps.map(s => 
+                                      s.id === step.id 
+                                        ? { ...s, description: stepDescription }
+                                        : s
+                                    ));
+                                    setEditingStepDesc(null);
+                                  }
+                                }}
+                                className="text-sm mt-1 mb-3"
+                                placeholder="Describe what happens in this step"
+                                autoFocus
+                              />
+                            ) : (
+                              <p 
+                                className="text-sm text-muted-foreground mt-1 mb-3 cursor-pointer hover:text-foreground"
+                                onClick={() => {
+                                  setEditingStepDesc(step.id);
+                                  setStepDescription(step.description);
+                                }}
+                              >
+                                {step.description || 'Click to describe what happens in this step'}
+                              </p>
+                            )}
                             
                             {/* Assigned Tools */}
                             <div className="space-y-2">

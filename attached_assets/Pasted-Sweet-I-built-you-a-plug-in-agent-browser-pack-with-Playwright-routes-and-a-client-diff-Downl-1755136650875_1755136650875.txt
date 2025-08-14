@@ -1,0 +1,110 @@
+Sweet. I built you a plug-in “agent browser” pack with Playwright, routes, and a client diff.
+
+Download: agent-browser-addon.zip
+Inside you’ll find:
+	•	server_agentBrowser.ts → the Playwright driver
+	•	server_agentBrowserRoutes.ts → Express routes
+	•	README_AGENT_BROWSER.md → step-by-step setup (Replit-friendly)
+	•	client_update.diff → minimal patch to make your AIBrowser use live screenshots/actions
+
+Below is the exact script you can hand to the Replit Agent (or paste into your shell). It assumes your project root is the TaskPilot repo you sent me.
+
+⸻
+
+Replit Agent — Installation & wiring script
+
+Goal: enable real web actions (navigate, click, type, screenshot) via a server-side browser.
+
+0) Unpack the add-on
+
+# Upload agent-browser-addon.zip to your Replit project, then:
+unzip -o agent-browser-addon.zip
+# Move files into place
+mkdir -p server
+mv server_agentBrowser.ts server/agentBrowser.ts
+mv server_agentBrowserRoutes.ts server/agentBrowserRoutes.ts
+mv README_AGENT_BROWSER.md docs/README_AGENT_BROWSER.md 2>/dev/null || mkdir -p docs && mv README_AGENT_BROWSER.md docs/
+
+1) Install dependencies
+
+pnpm add playwright ws
+npx playwright install --with-deps chromium
+
+2) Wire routes
+
+Open server/routes.ts and add:
+
+import { registerAgentBrowserRoutes } from "./agentBrowserRoutes";
+
+export function registerRoutes(app: import("express").Express) {
+  // existing routes…
+  registerAgentBrowserRoutes(app);
+}
+
+3) Ensure scripts are correct (they are close already)
+
+In package.json, scripts should be:
+
+{
+  "scripts": {
+    "dev": "NODE_ENV=development tsx server/index.ts",
+    "build": "vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist",
+    "start": "NODE_ENV=production node dist/index.js"
+  }
+}
+
+4) Patch the client browser (optional but recommended)
+
+If you want the live view in your UI, apply client_update.diff to your AIBrowser component.
+	•	Replace the “simulate loading” block with calls to:
+	•	POST /api/agent-browser/:id/actions { type: "navigate" }
+	•	then { type: "screenshot" }
+	•	Render the <img src="data:image/png;base64,..."> instead of the placeholder panel.
+
+(If you want me to generate the exact updated AIBrowser.tsx file, say the word and I’ll drop it in.)
+
+5) Test locally on Replit
+
+pnpm dev
+# In another tab, create a session:
+curl -s -X POST http://localhost:3000/api/agent-browser/sessions
+
+# Use returned "id" to navigate:
+curl -s -X POST http://localhost:3000/api/agent-browser/<id>/actions \
+  -H "Content-Type: application/json" \
+  -d '{"type":"navigate","url":"https://example.com"}'
+
+# Get a screenshot:
+curl -s -X POST http://localhost:3000/api/agent-browser/<id>/actions \
+  -H "Content-Type: application/json" \
+  -d '{"type":"screenshot"}' | jq -r .imageBase64 | head -c 64; echo
+
+
+⸻
+
+Do I need any subscriptions?
+	•	Playwright: free/open-source. No subscription.
+	•	Replit: you can run this on free tiers, but:
+	•	Long-running sessions may sleep; consider Always On if you want persistent browsing.
+	•	Playwright downloads Chromium; storage & memory may be tight on small repls. A Boost plan helps but isn’t strictly required.
+	•	No other paid APIs needed for basic navigation/click/type/screenshot.
+
+Guardrails checklist (recommended)
+	•	Add auth to /api/agent-browser/*.
+	•	Log actions to a file/db for audit ({sessionId, action, timestamp}).
+	•	Set inactivity TTL (e.g., 10 min) to destroySession(id).
+	•	Extend allow/deny lists in createSession() to match your Safe Mode.
+
+⸻
+
+Want me to also:
+	•	generate a ready-to-drop AIBrowser.tsx that calls the new endpoints, or
+	•	add a tiny Vitest smoke for “can create session and navigate”?
+
+Say the word and I’ll ship those as files too.
+
+(Personal Notes — for us)
+	•	Current focus: deliver runnable Playwright control plane + client patch.
+	•	My take: This is the most direct, robust way to get OpenAI-Agent style browsing.
+	•	Risks: Replit sleep/limits; fixed by shorter sessions or paid Always On.
+	•	Next steps: Wire auth + action transcript logging; add “AI Plan Runner” that sequences actions with backoff.
