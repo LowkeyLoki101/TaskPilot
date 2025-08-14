@@ -1,0 +1,40 @@
+Message for Replit Agent:
+
+We’re working on connecting our front-end (MindMap, WorkflowMindMap, AIBrowser) with our back-end/agent logic (agentBrowser, agentOrchestrator, aiWorkflowGenerator, etc.).
+
+From reviewing the code, here’s what’s clear:
+	1.	The UI currently simulates operations using setTimeout and static data instead of calling the real API.
+	2.	The backend code exists for an agent browser and workflows, but the UI is not wired to those endpoints.
+	3.	There’s no shared type contract between client and server for Tool, WorkflowStep, etc.
+	4.	Routes may be unregistered, missing, or mismatched in payload shape.
+	5.	The agent browser lacks visible lifecycle management from the UI (e.g., creating sessions, streaming screenshots).
+
+I need you to:
+
+A) Provide or confirm these files so I can see the complete wiring:
+	•	server/index.ts (or your main server entry)
+	•	server/routes.ts (or equivalent where Express routes are registered)
+	•	server/workflowRoutes.ts (or equivalent)
+	•	client/src/hooks/useMindMap.ts (where workflow/mind map data is fetched)
+	•	Any shared types file for Tool and WorkflowStep (or confirm none exists yet)
+
+B) Answer these:
+	1.	Which exact REST endpoints currently exist for:
+	•	Getting workflows for a project
+	•	Saving workflows
+	•	Executing a workflow
+	•	Creating and interacting with an agent browser session
+	2.	Are CORS and proxy settings configured to allow SPA calls to /api in dev and prod?
+	3.	Is there a persistence layer (DB) connected for workflows, or is it in-memory?
+
+C) Create / Update:
+	1.	If not present, create GET /api/projects/:id/workflow, POST /api/projects/:id/workflow, and POST /api/projects/:id/workflow/execute endpoints that match the WorkflowMindMap UI’s needs.
+	2.	Ensure agentBrowserRoutes is mounted in the server and supports:
+	•	POST /api/agent-browser/sessions (create)
+	•	POST /api/agent-browser/:id/actions (click, type, navigate, screenshot, etc.)
+	3.	Create a /shared/types.ts with Tool and WorkflowStep interfaces, import in both client and server.
+	4.	Modify useMindMap.ts and AIBrowser.tsx to call these real endpoints instead of setTimeout mocks.
+
+Please also document the high-level architecture — how the Mind Map UI triggers workflows, how workflows map to tools, and how tools execute via the agent orchestrator — so that front end and back end devs have the same mental model.
+
+⸻

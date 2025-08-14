@@ -17,6 +17,7 @@ import { db } from "./db";
 import { advancedFeatureProposals } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import { registerAgentBrowserRoutes } from "./agentBrowserRoutes";
+import { registerWorkflowRoutes } from "./workflowRoutes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const httpServer = createServer(app);
@@ -1221,6 +1222,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Register Agent Browser routes
   registerAgentBrowserRoutes(app);
+  
+  // Register Workflow routes
+  registerWorkflowRoutes(app);
 
   // Middleware to track request start time
   app.use((req: any, res, next) => {

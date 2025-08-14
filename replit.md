@@ -86,6 +86,16 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 
 ## Recent Architectural Changes (August 2025)
 
+### API Integration (August 14, 2025)
+- **Workflow API**: Created complete REST endpoints for workflow management at `/api/projects/:id/workflow`
+- **Shared Types**: Established `shared/workflowTypes.ts` for type contracts between client and server
+- **Real Execution**: Connected WorkflowMindMap UI to actual backend APIs instead of mocks
+- **Agent Browser Integration**: Wired up Playwright-based browser automation with proper API endpoints
+- **Workflow Execution Engine**: Implemented async workflow executor with tool orchestration
+- **Architecture Documentation**: Created comprehensive ARCHITECTURE.md file
+
+## Recent Architectural Changes (August 2025)
+
 ### Production-Ready Advanced Features
 - **Memory Management Service**: Implemented multi-tier memory architecture with STM/LTM, decay mechanisms, and automatic archival
 - **Tool Registry Service**: Created comprehensive tool management system with performance tracking, retry logic, and sandboxed execution

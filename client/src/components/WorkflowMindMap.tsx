@@ -30,33 +30,18 @@ import {
   Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWorkflow, useWorkflowExecution } from "@/hooks/useWorkflowApi";
+import { Tool as ToolType, WorkflowStep as WorkflowStepType, CreateWorkflowRequest } from "@shared/workflowTypes";
+import { toast } from "@/hooks/use-toast";
 
-interface Tool {
-  id: string;
-  type: 'youtube' | 'manual' | 'files' | 'art-generator' | 'web-search' | 'database' | 'custom';
-  name: string;
+// Extend the shared Tool type with UI-specific properties
+interface Tool extends Omit<ToolType, 'type'> {
+  type: 'youtube' | 'manual' | 'files' | 'art-generator' | 'web-search' | 'database' | 'custom' | 'builtin';
   icon: any;
-  description: string;
-  config?: {
-    action?: 'api_call' | 'file_operation' | 'ai_prompt' | 'data_transform' | 'notification';
-    endpoint?: string;
-    method?: string;
-    headers?: Record<string, string>;
-    body?: string;
-    outputVariable?: string;
-    prompt?: string;
-    fileOperation?: 'read' | 'write' | 'delete' | 'copy';
-    filePath?: string;
-  };
 }
 
-interface WorkflowStep {
-  id: string;
-  title: string;
-  description: string;
-  tools: string[]; // Tool IDs assigned to this step
-  completed?: boolean;
-}
+// Use the shared WorkflowStep type directly
+type WorkflowStep = WorkflowStepType;
 
 interface WorkflowMindMapProps {
   projectId: string;
@@ -110,15 +95,39 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
   const [draggedStep, setDraggedStep] = useState<string | null>(null);
   const [editingStepDesc, setEditingStepDesc] = useState<string | null>(null);
   const [stepDescription, setStepDescription] = useState<string>('');
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [currentStep, setCurrentStep] = useState<number | null>(null);
+  const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null);
+  
+  // Use the real API hooks
+  const { workflow, isLoading, saveWorkflow, executeWorkflow } = useWorkflow(projectId);
+  const { execution, logs } = useWorkflowExecution(currentExecutionId);
+  
+  // Helper function to get icon for tool
+  const getToolIcon = (tool: ToolType) => {
+    switch(tool.config?.action) {
+      case 'api_call': return Globe;
+      case 'file_operation': return File;
+      case 'ai_prompt': return Brain;
+      case 'data_transform': return Code;
+      case 'notification': return Bell;
+      default: return Wrench;
+    }
+  };
+  
+  // Sync workflow data from API
+  useEffect(() => {
+    if (workflow) {
+      setTools(workflow.tools.map(t => ({ ...t, icon: getToolIcon(t), type: t.type as Tool['type'] })) as Tool[]);
+      setSteps(workflow.steps);
+    }
+  }, [workflow]);
 
   const addNewStep = () => {
     const newStep: WorkflowStep = {
       id: `step-${Date.now()}`,
-      title: `Step ${steps.length + 1}`,
+      name: `Step ${steps.length + 1}`,
       description: 'Describe what happens in this step',
-      tools: []
+      tools: [],
+      order: steps.length
     };
     setSteps([...steps, newStep]);
   };
