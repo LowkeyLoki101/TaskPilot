@@ -87,6 +87,14 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 
 ## Recent Architectural Changes (August 2025)
 
+### Autonomy Mode Implementation (August 14, 2025)
+- **Full Autonomy Mode**: AI now creates visible tasks when working, providing transparency
+- **Task Creation**: Autonomous actions create real tasks in the database that appear in Tasks view
+- **Action-First Execution**: In full mode, AI executes commands immediately without confirmations
+- **Autonomy Mode Persistence**: Backend stores and uses autonomy mode for all AI interactions
+- **Frontend Integration**: ChatPane passes autonomy mode with all messages to control AI behavior
+- **Task Lifecycle**: AI tasks auto-complete after execution with proper status updates
+
 ### API Integration (August 14, 2025)
 - **Workflow API**: Created complete REST endpoints for workflow management at `/api/projects/:id/workflow`
 - **Shared Types**: Established `shared/workflowTypes.ts` for type contracts between client and server

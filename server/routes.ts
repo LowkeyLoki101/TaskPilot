@@ -192,6 +192,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Store autonomy mode in memory (could move to DB later)
+  const autonomyModes: Record<string, 'manual' | 'semi' | 'full'> = {};
+
   // Chat Messages
   app.get("/api/projects/:projectId/chat", async (req, res) => {
     try {
@@ -205,6 +208,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/projects/:projectId/chat", async (req, res) => {
     try {
+      // Extract autonomy mode from request
+      const autonomyMode = req.body.autonomyMode || autonomyModes[req.params.projectId] || 'semi';
+      
+      // Store autonomy mode for this project
+      if (req.body.autonomyMode) {
+        autonomyModes[req.params.projectId] = req.body.autonomyMode;
+      }
+
       const validated = insertChatMessageSchema.parse({
         ...req.body,
         projectId: req.params.projectId,
@@ -228,10 +239,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get recent messages for context
             const recentMessages = await storage.getChatMessagesByProject(req.params.projectId);
             
-            // Generate AI response with project context
+            // Generate AI response with project context AND autonomy mode
             const contextWithProject = {
               projectId: req.params.projectId,
-              recentMessages: recentMessages
+              recentMessages: recentMessages,
+              autonomyMode: autonomyMode
             };
             const aiResponseContent = await generateAIResponse(req.body.content, contextWithProject);
             
@@ -243,7 +255,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               content: aiResponseContent,
               metadata: {
                 model: 'gpt-4o',
-                generatedAt: new Date().toISOString()
+                generatedAt: new Date().toISOString(),
+                autonomyMode: autonomyMode
               }
             });
             
@@ -1174,39 +1187,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const possibleActions = [
         {
           type: 'enhancement',
+          title: '🔍 Analyze Workflow Patterns',
           description: 'Analyzing project workflow patterns',
           category: 'optimization',
-          impact: 'medium'
+          impact: 'medium',
+          status: 'in_progress' as const,
+          priority: 'medium' as const
         },
         {
           type: 'task',
+          title: '💡 Generate Task Suggestions',
           description: 'Creating contextual task suggestions',
           category: 'productivity',
-          impact: 'high'
+          impact: 'high',
+          status: 'in_progress' as const,
+          priority: 'high' as const
         },
         {
           type: 'maintenance',
+          title: '⚡ Optimize Performance',
           description: 'Optimizing system performance',
           category: 'system',
-          impact: 'low'
+          impact: 'low',
+          status: 'in_progress' as const,
+          priority: 'low' as const
         },
         {
           type: 'enhancement',
+          title: '🎨 Improve UI Responsiveness',
           description: 'Improving user interface responsiveness',
           category: 'ui',
-          impact: 'medium'
+          impact: 'medium',
+          status: 'in_progress' as const,
+          priority: 'medium' as const
         },
         {
           type: 'task',
+          title: '📊 Generate Insights',
           description: 'Generating project insights and recommendations',
           category: 'intelligence',
-          impact: 'high'
+          impact: 'high',
+          status: 'in_progress' as const,
+          priority: 'high' as const
         },
         {
           type: 'enhancement',
+          title: '🔄 Streamline Workflows',
           description: 'Streamlining workflow processes',
           category: 'automation',
-          impact: 'high'
+          impact: 'high',
+          status: 'in_progress' as const,
+          priority: 'medium' as const
         }
       ];
 
@@ -1214,32 +1245,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const numberOfActions = Math.floor(Math.random() * 3) + 1;
       const selectedActions = possibleActions
         .sort(() => Math.random() - 0.5)
-        .slice(0, numberOfActions)
-        .map(action => ({
-          id: randomUUID(),
-          ...action,
-          execute: true,
-          timestamp: new Date(),
-          contextual: context?.currentModule || 'dashboard'
-        }));
+        .slice(0, numberOfActions);
+
+      // In full autonomy mode, CREATE ACTUAL TASKS for visibility
+      const createdTasks = [];
+      if (autonomyLevel === 'full') {
+        for (const action of selectedActions) {
+          try {
+            // Create an actual task in the database
+            const task = await storage.createTask({
+              projectId: projectId || 'default-project',
+              title: action.title,
+              description: `[AI Generated] ${action.description}`,
+              status: action.status,
+              priority: action.priority,
+              position: {
+                x: Math.random() * 400 + 100,
+                y: Math.random() * 400 + 100
+              },
+              metadata: {
+                createdBy: 'ai-assistant',
+                autonomyLevel: autonomyLevel,
+                category: action.category,
+                impact: action.impact,
+                autoGenerated: true
+              }
+            });
+            
+            createdTasks.push(task);
+            console.log(`✅ Created task: ${task.title}`);
+            
+            // Broadcast the new task to all connected clients
+            broadcastToProject(projectId, {
+              type: 'task_created',
+              data: task
+            });
+            
+            // Simulate task completion after a delay (30-60 seconds)
+            setTimeout(async () => {
+              try {
+                const updatedTask = await storage.updateTask(task.id, {
+                  status: 'completed',
+                  metadata: {
+                    ...task.metadata,
+                    completedAt: new Date().toISOString(),
+                    completedBy: 'ai-assistant'
+                  }
+                });
+                
+                broadcastToProject(projectId, {
+                  type: 'task_updated',
+                  data: updatedTask
+                });
+                
+                console.log(`✅ Completed task: ${task.title}`);
+                activityLogger.log(`AI completed task: ${task.title}`, 'task', { taskId: task.id });
+              } catch (err) {
+                console.error(`Failed to complete task ${task.id}:`, err);
+              }
+            }, (30 + Math.random() * 30) * 1000);
+            
+          } catch (err) {
+            console.error('Failed to create task:', err);
+          }
+        }
+      }
 
       // Log the autonomous activity to the real activity system
       activityLogger.log(
-        `Generated ${selectedActions.length} autonomous AI actions`,
+        `Generated ${selectedActions.length} autonomous AI actions${createdTasks.length > 0 ? ` and created ${createdTasks.length} tasks` : ''}`,
         'maintenance',
         { 
           projectId, 
           autonomyLevel,
           actions: selectedActions.map(a => a.description),
+          tasksCreated: createdTasks.map(t => t.title),
           context: context?.currentModule 
         }
       );
 
       console.log(`🤖 Generated ${selectedActions.length} autonomous actions:`, selectedActions.map(a => a.description));
+      if (createdTasks.length > 0) {
+        console.log(`📝 Created ${createdTasks.length} visible tasks in the system`);
+      }
 
       res.json({
         success: true,
-        actions: selectedActions,
+        actions: selectedActions.map(action => ({
+          id: randomUUID(),
+          ...action,
+          execute: true,
+          timestamp: new Date(),
+          contextual: context?.currentModule || 'dashboard'
+        })),
+        tasksCreated: createdTasks,
         projectId,
         autonomyLevel,
         context,

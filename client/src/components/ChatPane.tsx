@@ -23,10 +23,11 @@ interface ChatMessage {
 
 interface ChatPaneProps {
   projectId: string;
+  autonomyMode?: 'manual' | 'semi' | 'full';
   className?: string;
 }
 
-export function ChatPane({ projectId, className }: ChatPaneProps) {
+export function ChatPane({ projectId, autonomyMode = 'semi', className }: ChatPaneProps) {
   const [message, setMessage] = useState("");
   const [attachedFiles, setAttachedFiles] = useState<string[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -48,7 +49,7 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ content, role: "user" })
+        body: JSON.stringify({ content, role: "user", autonomyMode })
       });
       
       if (!response.ok) {

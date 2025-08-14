@@ -1,0 +1,170 @@
+Got it — you want the app split exactly like your screenshots: a wide main workspace (blue) and a slim inspector on the right (red), with matching sticky headers and no overlap/clipping.
+
+Here’s a drop-in layout that does that cleanly.
+
+1) Make the page a 2×2 grid (shared header + two columns)
+
+client/src/pages/Dashboard.tsx – wrap your content like this:
+
+// ...imports
+
+export default function Dashboard() {
+  // state you already have...
+
+  return (
+    <div className="h-screen w-full bg-background">
+      {/* APP GRID: header row + content row */}
+      <div className="grid h-full grid-rows-[auto,1fr] grid-cols-[1fr,320px] lg:grid-cols-[1fr,360px] xl:grid-cols-[1fr,380px] overflow-hidden">
+
+        {/* ======= TOP BAR (spans both columns) ======= */}
+        <div className="row-[1] col-span-2 sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+          {/* put your Mind Map / Calendar / Tasks / AI Activity / Workflows / Add Task bar here */}
+          <div className="h-12 flex items-center gap-2 px-4 overflow-x-auto">
+            {/* ...your existing toolbar buttons */}
+          </div>
+        </div>
+
+        {/* ======= MAIN WORKSPACE (left) ======= */}
+        <main className="row-[2] col-[1] min-w-0 overflow-hidden">
+          <div className="h-full flex flex-col">
+            {/* page title + local toolbar if you keep one */}
+            <div className="h-12 shrink-0 flex items-center px-4 border-b border-border bg-background sticky top-12 z-30">
+              <div className="text-sm font-semibold">Workflow Orchestrator</div>
+              {/* Tools(SHOW)/Steps(SHOW) etc… */}
+              <div className="ml-4 flex items-center gap-2">
+                {/* your buttons */}
+              </div>
+            </div>
+
+            {/* canvas/content */}
+            <div className="flex-1 min-h-0 overflow-auto">
+              {/* e.g., <WorkflowMindMap projectId={projectId} className="h-full" /> */}
+            </div>
+          </div>
+        </main>
+
+        {/* ======= INSPECTOR (right) ======= */}
+        <aside
+          className="row-[2] col-[2] min-w-[280px] max-w-[420px] border-l border-border bg-card
+                     flex flex-col overflow-hidden"
+        >
+          {/* inspector header, same height as left subheader */}
+          <div className="h-12 shrink-0 flex items-center px-3 border-b border-border bg-card sticky top-12 z-30">
+            {/* your <TabsList> … keep it single-line & scrollable */}
+            <div className="w-full overflow-x-auto">
+              {/* <Inspector tabs> */}
+            </div>
+          </div>
+
+          {/* inspector body */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            {/* <InspectorPane ... /> OR the inner contents if you embed directly */}
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+Why this fixes your pain points
+	•	No overlap: two explicit grid columns; inspector is a fixed column (320–380px).
+	•	Matching headers: both left and right use h-12 sticky bars aligned to the same offset (top-12) under the global top bar.
+	•	Nothing gets cut off: every large area is flex-1 min-h-0 overflow-auto, so scroll lives inside each pane, not the whole app.
+	•	Toolbar room: the top bar spans both columns; your module chips (“Mind Map / Calendar / Tasks / AI Activity…”) get full width with horizontal scroll if needed.
+
+⸻
+
+2) Make the InspectorPane respect the host (no extra padding/tall header)
+
+client/src/components/InspectorPane.tsx – trim outer wrappers and match the heights you set above:
+
+export function InspectorPane({...props}: InspectorPaneProps) {
+  const [activeTab, setActiveTab] = useState("ai");
+
+  return (
+    <div className={`h-full flex flex-col ${props.className ?? ""}`} data-testid="inspector-pane">
+      {/* REMOVE the extra top padding block you had. 
+          Header height is controlled by Dashboard now. */}
+
+      {/* Body */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          {/* TabsList lives in the inspector header (Dashboard).
+              So only TabsContent here. */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <TabsContent value="ai" className="m-0 h-full">
+              {/* your AI panel contents – make them flex/scroll-friendly */}
+            </TabsContent>
+            <TabsContent value="task" className="m-0 h-full">
+              {/* ... */}
+            </TabsContent>
+            {/* others… */}
+          </div>
+        </Tabs>
+      </div>
+    </div>
+  );
+}
+
+And expose the TabsList out of InspectorPane (or pass it in) so the list sits in that 12-px header we created. If you’d rather keep it inside InspectorPane, then remove your internal header in Dashboard and keep just one 12-px header in the inspector; key is: exactly one header there and its height matches the left one.
+
+A quick in-place option (keep it inside InspectorPane): wrap your TabsList with:
+
+<div className="h-12 shrink-0 sticky top-12 z-30 border-b border-border bg-card flex items-center px-3">
+  <TabsList className="w-full overflow-x-auto whitespace-nowrap"> ... </TabsList>
+</div>
+
+
+⸻
+
+3) Keep module chips in a single shared top bar
+
+Move those “Mind Map / Calendar / Tasks / AI Activity / Workflows / Add Task” buttons into the top shared header (the one that spans both columns). That prevents the inspector from “stealing” horizontal space and makes the blue (workspace) and red (inspector) regions line up like in your images.
+
+Make that chip row horizontally scrollable:
+
+<div className="h-12 flex items-center gap-2 px-4 overflow-x-auto scrollbar-none">
+  {/* chips */}
+</div>
+
+
+⸻
+
+4) (Optional) Make the inspector resizable
+
+If you want drag-to-resize like a pro IDE without adding libs:
+
+// on the <aside> add:
+style={{ resize: 'horizontal' }}
+className="... overflow-auto min-w-[280px] max-w-[60vw]"
+
+This uses native CSS resizing; it’s simple and works well with the grid.
+
+⸻
+
+5) Fix inner scroll & cut-off issues
+
+Wherever a panel has content, ensure the container chain includes:
+	•	parent: flex flex-col
+	•	header: h-12 shrink-0
+	•	content: flex-1 min-h-0 overflow-auto
+
+This “min-h-0” is the secret that prevents children from growing past their box and getting clipped.
+
+⸻
+
+6) Agents in the main workspace (if you want that)
+
+You said “Agents should be in the main workspace with other tools”. Two easy ways:
+
+A. Route/module switcher (recommended):
+	•	Keep the inspector for details only.
+	•	In the main content, switch between <WorkflowMindMap />, <AgentDashboard />, etc., based on the top bar chip.
+
+B. Split the canvas:
+	•	Left: mind map; Right (not the inspector): an in-canvas panel for Agents.
+	•	Keep the inspector for drill-down only (task details, activity log).
+
+⸻
+
+If you paste the Dashboard grid wrapper (section #1) and align the inspector/header as in #2, your UI will match the red/blue layout in your screenshots precisely, with room for the chips and zero overlap. If you want, I can also sketch the exact diff against your current Dashboard.tsx to make it copy-pasteable.

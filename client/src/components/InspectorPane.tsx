@@ -192,6 +192,7 @@ export function InspectorPane({
               <div className="flex-[2] min-h-0">
                 <ChatPane 
                   projectId={projectId}
+                  autonomyMode={autonomyMode}
                   className="h-full border-none"
                 />
               </div>
