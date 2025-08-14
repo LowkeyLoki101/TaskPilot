@@ -87,7 +87,7 @@ const defaultTools: Tool[] = [
 ];
 
 export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) {
-  const [showTools, setShowTools] = useState(true);
+  const [showTools, setShowTools] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
   const [showGuide, setShowGuide] = useState(true);
   const [tools, setTools] = useState<Tool[]>(defaultTools);
@@ -119,7 +119,14 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
   // Sync workflow data from API
   useEffect(() => {
     if (workflow) {
-      setTools(workflow.tools.map(t => ({ ...t, icon: getToolIcon(t), type: t.type as Tool['type'] })) as Tool[]);
+      console.log('Loading workflow from API:', workflow);
+      const mappedTools = workflow.tools.map(t => ({ 
+        ...t, 
+        icon: getToolIcon(t), 
+        type: t.type as Tool['type'] 
+      })) as Tool[];
+      console.log('Mapped tools:', mappedTools);
+      setTools(mappedTools);
       setSteps(workflow.steps);
     }
   }, [workflow]);
@@ -362,6 +369,9 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
             {showTools && (
               <div className="absolute top-full mt-8 left-1/2 transform -translate-x-1/2">
                 <div className="relative">
+                  <p className="text-xs text-center mb-4 text-muted-foreground">
+                    Available Tools ({tools.length})
+                  </p>
                   {tools.map((tool, index) => {
                     const angle = (index * 60) - 90; // Spread tools in arc
                     const radius = 200;
@@ -483,12 +493,15 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                 <div className="w-80">
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-semibold">Workflow Steps</h4>
-                      <Button onClick={addNewStep} size="sm" variant="primary">
+                      <h4 className="font-semibold">Workflow Steps ({steps.length})</h4>
+                      <Button onClick={addNewStep} size="sm">
                         <Plus className="h-3 w-3 mr-1" />
                         Add Step
                       </Button>
                     </div>
+                    {steps.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Click "Add Step" to build your workflow</p>
+                    )}
                   </div>
                   
                   <ScrollArea className="h-[400px]">
@@ -520,7 +533,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                                 <Badge variant="outline" className="text-xs">
                                   {index + 1}
                                 </Badge>
-                                <span className="font-medium">{step.title}</span>
+                                <span className="font-medium">{step.name || step.title}</span>
                               </div>
                               <Button
                                 variant="ghost"
