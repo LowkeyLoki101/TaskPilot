@@ -174,7 +174,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
   };
 
   return (
-    <div className={cn("h-full flex flex-col bg-gradient-to-br from-background to-muted/20", className)}>
+    <div className={cn("h-full flex flex-col bg-gradient-to-br from-background to-muted/20 overflow-hidden", className)}>
       {/* Header Controls */}
       <div className="p-4 border-b border-border bg-background/95">
         <div className="flex items-center justify-between mb-4">
@@ -221,7 +221,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
       </div>
 
       {/* Mind Map Canvas */}
-      <div className="flex-1 relative overflow-hidden">
+      <div className="flex-1 relative overflow-auto">
         <div className="absolute inset-0 flex items-center justify-center">
           
           {/* Central Project Node */}

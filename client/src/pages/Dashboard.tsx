@@ -640,10 +640,10 @@ export default function Dashboard() {
       />
       
       {/* Desktop Two-Pane Layout - Workspace + Inspector */}
-      <div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[1fr,400px]">
+      <div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[1fr,400px] overflow-hidden">
 
         {/* Center Pane - Canvas */}
-        <div className="flex flex-col min-w-0 bg-background">
+        <div className="flex flex-col min-w-0 bg-background h-full overflow-hidden">
           {/* Autonomous AI Workstation Toolbar */}
           <div className="bg-card border-b border-border p-3">
             <div className="flex justify-between items-center">
@@ -810,7 +810,7 @@ export default function Dashboard() {
           </div>
 
           {/* Canvas Content - Module Container */}
-          <div className="flex-1 relative overflow-hidden">
+          <div className="flex-1 relative overflow-auto">
             {workflowMode ? (
               currentWorkflow ? (
                 <TraceCanvas
@@ -985,7 +985,7 @@ export default function Dashboard() {
             lastMaintenanceRun={lastMaintenanceRun}
             onRunMaintenance={runMaintenanceCheck}
             projectId={currentProjectId}
-            className="hidden lg:flex"
+            className="hidden lg:flex h-full overflow-hidden"
           />
         )}
       </div>

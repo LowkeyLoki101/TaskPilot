@@ -111,7 +111,7 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
   }, [messages]);
 
   return (
-    <div className={`flex flex-col bg-card h-full ${className}`} data-testid="chat-pane">
+    <div className={`flex flex-col bg-card h-full overflow-hidden ${className}`} data-testid="chat-pane">
       {/* Header */}
       <div className="p-2 border-b border-border">
         <div className="flex items-center gap-2">
