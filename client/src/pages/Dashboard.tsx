@@ -680,7 +680,7 @@ export default function Dashboard() {
                       onClick={() => {
                         const container = document.getElementById('module-selector');
                         if (container) {
-                          container.scrollBy({ left: -150, behavior: 'smooth' });
+                          container.scrollBy({ left: -200, behavior: 'smooth' });
                         }
                       }}
                       className="h-7 w-7 p-0"
@@ -691,78 +691,78 @@ export default function Dashboard() {
                     
                     <div 
                       id="module-selector"
-                      className="flex items-center border rounded-lg p-1 bg-muted/50 max-w-[400px] overflow-x-auto scrollbar-hide"
+                      className="flex items-center border rounded-lg p-1 bg-muted/50 max-w-[220px] overflow-x-hidden scrollbar-hide"
                       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                       <Button
                         variant={currentModule === 'mindmap' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('mindmap')}
-                        className="h-7 px-2 shrink-0"
+                        className="h-7 px-2 shrink-0 text-xs"
                         data-testid="module-mindmap"
                       >
                         <Brain className="h-3 w-3 mr-1" />
-                        Mind Map
+                        <span>Mind Map</span>
                       </Button>
                       <Button
                         variant={currentModule === 'calendar' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('calendar')}
-                        className="h-7 px-2 shrink-0"
+                        className="h-7 px-2 shrink-0 text-xs"
                         data-testid="module-calendar"
                       >
                         <Calendar className="h-3 w-3 mr-1" />
-                        Calendar
+                        <span>Calendar</span>
                       </Button>
                       <Button
                         variant={currentModule === 'tasks' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('tasks')}
-                        className="h-7 px-2 shrink-0"
+                        className="h-7 px-2 shrink-0 text-xs"
                         data-testid="module-tasks"
                       >
                         <CheckCircle className="h-3 w-3 mr-1" />
-                        Tasks
+                        <span>Tasks</span>
                       </Button>
                       <Button
                         variant={currentModule === 'browser' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('browser')}
-                        className="h-7 px-2 shrink-0"
+                        className="h-7 px-2 shrink-0 text-xs"
                         data-testid="module-browser"
                       >
                         <Globe className="h-3 w-3 mr-1" />
-                        Browser
+                        <span>Browser</span>
                       </Button>
                       <Button
                         variant={currentModule === 'diagnostics' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('diagnostics')}
-                        className="h-7 px-2 shrink-0"
+                        className="h-7 px-2 shrink-0 text-xs"
                         data-testid="module-diagnostics"
                       >
                         <BarChart3 className="h-3 w-3 mr-1" />
-                        Debug
+                        <span>Debug</span>
                       </Button>
                       <Button
                         variant={currentModule === 'agents' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('agents')}
-                        className="h-7 px-2 shrink-0"
+                        className="h-7 px-2 shrink-0 text-xs"
                         data-testid="module-agents"
                       >
                         <Bot className="h-3 w-3 mr-1" />
-                        Agents
+                        <span>Agents</span>
                       </Button>
                       <Button
                         variant={currentModule === 'tools' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('tools')}
-                        className="h-7 px-2 shrink-0"
+                        className="h-7 px-2 shrink-0 text-xs"
                         data-testid="module-tools"
                       >
                         <Wrench className="h-3 w-3 mr-1" />
-                        Tools
+                        <span>Tools</span>
                       </Button>
                     </div>
                     
@@ -772,7 +772,7 @@ export default function Dashboard() {
                       onClick={() => {
                         const container = document.getElementById('module-selector');
                         if (container) {
-                          container.scrollBy({ left: 150, behavior: 'smooth' });
+                          container.scrollBy({ left: 200, behavior: 'smooth' });
                         }
                       }}
                       className="h-7 w-7 p-0"
