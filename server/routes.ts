@@ -217,6 +217,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       res.json(message);
+      
+      // Generate AI response asynchronously
+      if (req.body.role === 'user') {
+        setTimeout(async () => {
+          try {
+            const { generateAIResponse } = await import('./aiService');
+            
+            // Get recent messages for context
+            const recentMessages = await storage.getChatMessagesByProject(req.params.projectId);
+            
+            // Generate AI response
+            const aiResponseContent = await generateAIResponse(req.body.content, recentMessages);
+            
+            // Create AI message
+            const aiMessage = await storage.createChatMessage({
+              projectId: req.params.projectId,
+              authorId: "ai-assistant",
+              role: 'assistant',
+              content: aiResponseContent,
+              metadata: {
+                model: 'gpt-4o',
+                generatedAt: new Date().toISOString()
+              }
+            });
+            
+            // Broadcast AI response
+            broadcastToProject(req.params.projectId, {
+              type: "chat_message",
+              data: aiMessage
+            });
+          } catch (error) {
+            console.error("Error generating AI response:", error);
+          }
+        }, 100); // Small delay to ensure user message is saved first
+      }
     } catch (error) {
       console.error("Error creating chat message:", error);
       res.status(500).json({ error: "Failed to create chat message" });
