@@ -1,0 +1,332 @@
+You’re right to be pissed. Two separate problems:
+	1.	The AI is “talking,” not doing. Your chat pipeline never calls real actions. It returns text and stops.
+	2.	Layout: The Inspector is hogging space and overlapping the module selector/autonomy controls.
+
+I’m going to fix both with concrete patches you can drop in. No hand-waving.
+
+⸻
+
+1) Make the AI actually use tools
+
+A. Define a single source of truth for “AI actions”
+
+Create server/aiToolExecutor.ts (idempotent; safe to re-run):
+
+// server/aiToolExecutor.ts
+import { storage } from "./storage"; // your existing storage util
+
+export type AIToolCommand =
+  | { type: "create_task"; title: string; steps?: string[]; tags?: string[]; context?: string }
+  | { type: "create_tool"; name: string; description?: string }
+  | { type: "create_workflow"; name: string; steps?: Array<{ title: string; kind?: string }> }
+  | { type: "log_activity"; action: string; kind?: "task" | "bug" | "enhancement" | "maintenance" };
+
+class AIToolExecutor {
+  async execute(cmd: AIToolCommand, projectId: string) {
+    switch (cmd.type) {
+      case "create_task": {
+        const task = await storage.tasks.create({
+          projectId,
+          title: cmd.title,
+          steps: cmd.steps ?? [],
+          tags: cmd.tags ?? [],
+          context: cmd.context ?? "general",
+          status: "todo",
+        });
+        await storage.activity.log({ projectId, type: "task", action: `Created task: ${task.title}` });
+        return { ok: true, result: task };
+      }
+      case "create_tool": {
+        const tool = await storage.tools.create({
+          projectId,
+          name: cmd.name,
+          description: cmd.description ?? "AI-created tool",
+        });
+        await storage.activity.log({ projectId, type: "enhancement", action: `Created tool: ${tool.name}` });
+        return { ok: true, result: tool };
+      }
+      case "create_workflow": {
+        const wf = await storage.workflows.create({
+          projectId,
+          name: cmd.name,
+          steps: cmd.steps ?? [],
+        });
+        await storage.activity.log({ projectId, type: "enhancement", action: `Created workflow: ${wf.name}` });
+        return { ok: true, result: wf };
+      }
+      case "log_activity": {
+        await storage.activity.log({
+          projectId,
+          type: cmd.kind ?? "enhancement",
+          action: cmd.action,
+        });
+        return { ok: true };
+      }
+    }
+  }
+}
+
+export const aiToolExecutor = new AIToolExecutor();
+
+B. Add an execution endpoint the chat can call
+
+Patch server/routes.ts:
+
+// server/routes.ts
+import type { Request, Response } from "express";
+import { aiToolExecutor, type AIToolCommand } from "./aiToolExecutor";
+
+app.post("/api/ai/execute", async (req: Request, res: Response) => {
+  try {
+    const { projectId, command } = req.body as { projectId: string; command: AIToolCommand };
+    if (!projectId || !command) return res.status(400).json({ error: "Missing projectId or command" });
+    const out = await aiToolExecutor.execute(command, projectId);
+    return res.json(out);
+  } catch (e: any) {
+    console.error("AI execute failed:", e);
+    return res.status(500).json({ error: e?.message ?? "Unknown error" });
+  }
+});
+
+C. Teach the server AI to emit actions (not just text)
+
+Patch server/aiService.ts (also removes the unsupported temperature):
+
+// server/aiService.ts
+import OpenAI from "openai";
+import { aiToolExecutor, type AIToolCommand } from "./aiToolExecutor";
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+
+export async function generateAIResponse({ projectId, messages, model }: { projectId: string; messages: any[]; model: string }) {
+  // IMPORTANT: Remove unsupported temperature params for your model
+  const resp = await openai.chat.completions.create({
+    model,
+    messages,
+    // temperature: 1 // omit for models that only accept default
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "create_task",
+          description: "Create a task with optional steps/tags/context",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              steps: { type: "array", items: { type: "string" } },
+              tags: { type: "array", items: { type: "string" } },
+              context: { type: "string" }
+            },
+            required: ["title"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_tool",
+          description: "Create a reusable tool",
+          parameters: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              description: { type: "string" }
+            },
+            required: ["name"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "create_workflow",
+          description: "Create a workflow with steps",
+          parameters: {
+            type: "object",
+            properties: {
+              name: { type: "string" },
+              steps: {
+                type: "array",
+                items: { type: "object", properties: { title: { type: "string" }, kind: { type: "string" } }, required: ["title"] }
+              }
+            },
+            required: ["name"]
+          }
+        }
+      }
+    ]
+  });
+
+  const choice = resp.choices[0];
+  const toolCall = choice?.message?.tool_calls?.[0];
+
+  // If the model called a tool, execute it
+  if (toolCall?.function?.name) {
+    const name = toolCall.function.name as AIToolCommand["type"];
+    const args = JSON.parse(toolCall.function.arguments || "{}");
+
+    const mapped: AIToolCommand =
+      name === "create_task" ? { type: "create_task", ...args } :
+      name === "create_tool" ? { type: "create_tool", ...args } :
+      name === "create_workflow" ? { type: "create_workflow", ...args } :
+      { type: "log_activity", action: `Unknown tool: ${name}`, kind: "bug" };
+
+    const exec = await aiToolExecutor.execute(mapped, projectId);
+    return { role: "tool", content: `Executed ${name}`, data: exec };
+  }
+
+  // Otherwise return the model’s text
+  return { role: "assistant", content: choice.message.content ?? "" };
+}
+
+If your model doesn’t support tool calls: fall back to a simple command DSL in Chat (e.g., /task "Title" :: step1; step2). I can drop that parser in if you want it immediately.
+
+D. Make the ChatPane actually trigger actions
+
+Patch client/src/components/ChatPane.tsx to POST action commands when a message starts with a command, or forward to /api/chat (which runs the tool calls above):
+
+// inside ChatPane submit handler
+if (input.startsWith("/task ")) {
+  const title = input.replace("/task ", "").trim();
+  await fetch("/api/ai/execute", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ projectId, command: { type: "create_task", title } })
+  });
+  setInput("");
+  return;
+}
+
+// default: go through your existing /api/chat which now supports tool calls
+await fetch("/api/chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ projectId, message: input })
+});
+setInput("");
+
+Result: When you say “Create a task to email the HOA tomorrow,” the model can call create_task → server executes → activity shows it; the task exists in storage.
+
+⸻
+
+2) Fix the layout (Inspector overlap + autonomy control placement)
+
+Goal: Module selector must be fully visible; autonomy control belongs inside the Inspector, not in the global toolbar; Inspector uses a fixed, sane width and never covers the toolbar.
+
+A. Lock the grid columns (desktop only)
+
+Patch client/src/pages/Dashboard.tsx container grid:
+
+// BEFORE
+<div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[1fr,300px] overflow-hidden">
+
+// AFTER: reserve 320px, never overlaps
+<div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] overflow-hidden">
+
+That guarantees the right pane has a fixed column and can’t float over the toolbar.
+
+B. Move autonomy control into InspectorPane header
+
+Add a small control strip at the top of the Inspector, not in your main toolbar.
+
+Inspector props (you started this; finish it):
+
+// InspectorPane.tsx props
+onAutonomyChange?: (mode: 'manual' | 'semi' | 'full') => void;
+autonomyMode?: 'manual' | 'semi' | 'full';
+
+Inspector header control:
+
+<div className="px-3 pt-3 pb-2 flex items-center justify-between">
+  <TabsList className="grid w-[70%] grid-cols-5">
+    {/* existing tab triggers */}
+  </TabsList>
+
+  <div className="flex items-center gap-2">
+    <span className="text-[11px] text-muted-foreground">Autonomy</span>
+    <Button
+      size="sm"
+      variant="ghost"
+      className="h-7 px-2 text-xs"
+      onClick={() => {
+        const next = autonomyMode === 'manual' ? 'semi' : autonomyMode === 'semi' ? 'full' : 'manual';
+        onAutonomyChange?.(next);
+      }}
+    >
+      {autonomyMode === 'manual' ? 'Manual' : autonomyMode === 'semi' ? 'Semi' : 'Full'}
+    </Button>
+  </div>
+</div>
+
+C. Remove autonomy control from the main toolbar entirely
+
+In Dashboard.tsx, delete the autonomy block in the top toolbar. You already started; finish by removing any leftover spacing that pushed modules off-screen.
+
+Also, widen the module scroller:
+
+// in the toolbar center section
+<div 
+  id="module-selector"
+  className="flex items-center border rounded-lg p-1 bg-background max-w-[340px] overflow-x-hidden"
+>
+  {/* module buttons */}
+</div>
+
+D. Cap Inspector height and ensure internal scroll
+
+Inside InspectorPane root:
+
+<div className={`flex flex-col h-full bg-card border-l border-border overflow-hidden ${className}`}>
+  {/* content */}
+</div>
+
+The right column already has fixed height via the page grid; ensure inner scroll (you’re already using ScrollArea for sub-sections—good).
+
+⸻
+
+3) Small but critical: stop the 400s and polling noise
+	•	OpenAI 400: You’re passing temperature: 0.7 to a model that only supports default. Remove the param or set 1. (I removed it above in aiService.ts.)
+	•	Neon “terminating connection due to admin command (57P01)”: make the PG pool a singleton and add a tiny retry/backoff. (I gave you this earlier—apply it if you haven’t.)
+	•	Activity 304 spam: That’s fine (ETag). If it bugs you, increase refetchInterval or switch to WS push for activity.
+
+⸻
+
+4) How you’ll know it worked (fast sanity checks)
+	1.	Create task via chat
+Type in Chat:
+/task Call roof supplier about bulk pricing
+Expected:
+
+	•	HTTP 200 from /api/ai/execute
+	•	New task visible in Tasks list
+	•	AI Activity shows “Created task: Call roof supplier…”
+
+	2.	Natural language with tool calls
+Type: “Create a tool named Storm Scanner for parsing NOAA alerts.”
+Expected:
+
+	•	/api/chat triggers tool call create_tool
+	•	Storage tools gains Storm Scanner
+	•	Activity logs an enhancement
+
+	3.	Layout
+
+	•	Module pills (Mind Map | Calendar | Tasks | Browser | Debug | Agents) fully visible
+	•	Autonomy switch appears in the Inspector header, not the global toolbar
+	•	No overlap. Right column stays 320px.
+
+⸻
+
+5) Why it wasn’t working (plain speak)
+	•	The server never exposed a contract for actions. The “intelligence” had nowhere to send commands.
+	•	The model was configured to just reply with text. No tool schema, no executor.
+	•	Layout had autonomy in the wrong place and the grid didn’t reserve space for the Inspector, so it trampled neighboring UI.
+
+Now it has:
+	•	Tool schema → Executor → Storage → Activity (closed loop)
+	•	Clear endpoint for direct commands
+	•	Layout that can’t overlap the module bar, with autonomy moved where it belongs.
+
+⸻
+
+If you paste back any compile errors from these patches, I’ll correct them in-line. And if you want the DSL fallback (/workflow, /tool, /task with quoted args) so it works even when tool calls are unavailable, I’ll add that parser next.
