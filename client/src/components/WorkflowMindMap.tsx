@@ -37,8 +37,7 @@ import { Tool as ToolType, WorkflowStep as WorkflowStepType, CreateWorkflowReque
 import { toast } from "@/hooks/use-toast";
 
 // Extend the shared Tool type with UI-specific properties
-interface Tool extends Omit<ToolType, 'type'> {
-  type: 'youtube' | 'manual' | 'files' | 'art-generator' | 'web-search' | 'database' | 'custom' | 'builtin';
+interface Tool extends ToolType {
   icon: any;
 }
 
@@ -53,38 +52,43 @@ interface WorkflowMindMapProps {
 const defaultTools: Tool[] = [
   {
     id: 'youtube-1',
-    type: 'youtube',
+    type: 'builtin',
     name: 'YouTube Research',
     icon: Youtube,
-    description: 'Search and analyze YouTube videos'
+    description: 'Search and analyze YouTube videos',
+    config: { action: 'api_call' }
   },
   {
     id: 'manual-1',
-    type: 'manual',
+    type: 'builtin',
     name: 'Product Manual',
     icon: FileText,
-    description: 'Access product documentation'
+    description: 'Access product documentation',
+    config: { action: 'file_operation' }
   },
   {
     id: 'files-1',
-    type: 'files',
+    type: 'builtin',
     name: 'File Storage',
     icon: Database,
-    description: 'Upload and manage files'
+    description: 'Upload and manage files',
+    config: { action: 'file_operation' }
   },
   {
     id: 'art-1',
-    type: 'art-generator',
+    type: 'builtin',
     name: 'AI Art Generator',
     icon: Image,
-    description: 'Create images with AI'
+    description: 'Create images with AI',
+    config: { action: 'ai_prompt' }
   },
   {
     id: 'web-1',
-    type: 'web-search',
+    type: 'builtin',
     name: 'Web Search',
     icon: Globe,
-    description: 'Search the internet'
+    description: 'Search the internet',
+    config: { action: 'api_call' }
   }
 ];
 
@@ -149,9 +153,12 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
   };
 
   const addToolToStep = (stepId: string, toolId: string) => {
+    const tool = tools.find(t => t.id === toolId);
+    if (!tool) return;
+    
     setSteps(steps.map(step => 
       step.id === stepId 
-        ? { ...step, tools: [...step.tools, toolId] }
+        ? { ...step, tools: [...step.tools, tool] }
         : step
     ));
   };
@@ -159,7 +166,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
   const removeToolFromStep = (stepId: string, toolId: string) => {
     setSteps(steps.map(step => 
       step.id === stepId 
-        ? { ...step, tools: step.tools.filter(t => t !== toolId) }
+        ? { ...step, tools: step.tools.filter(t => t.id !== toolId) }
         : step
     ));
   };
@@ -187,9 +194,9 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
       const step = steps[i];
       
       // Show only tools for current step
-      console.log(`Executing Step ${i + 1}: ${step.title}`);
-      console.log('Required tools:', step.tools.map(toolId => 
-        tools.find(t => t.id === toolId)?.name
+      console.log(`Executing Step ${i + 1}: ${step.name}`);
+      console.log('Required tools:', step.tools.map(tool => 
+        tool.name
       ).join(', '));
       
       // Simulate step execution
@@ -292,7 +299,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                 Interactive workspace that responds to your commands
               </p>
             </div>
-          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
             <Button
               variant={showTools ? "default" : "outline"}
               size="sm"
@@ -340,6 +347,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                 </>
               )}
             </Button>
+          </div>
           </div>
         </div>
       </div>
@@ -517,7 +525,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                             "border-l-4 transition-all",
                             currentStep === index 
                               ? "border-l-green-500 bg-green-50 dark:bg-green-950/20" 
-                              : step.completed 
+                              : step.status === 'completed' 
                                 ? "border-l-blue-500 bg-blue-50 dark:bg-blue-950/20"
                                 : "border-l-muted-foreground/20"
                           )}
@@ -537,7 +545,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                                 <Badge variant="outline" className="text-xs">
                                   {index + 1}
                                 </Badge>
-                                <span className="font-medium">{step.name || step.title}</span>
+                                <span className="font-medium">{step.name}</span>
                               </div>
                               <Button
                                 variant="ghost"
@@ -594,23 +602,20 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                                 Required Tools:
                               </p>
                               <div className="flex flex-wrap gap-1">
-                                {step.tools.map(toolId => {
-                                  const tool = tools.find(t => t.id === toolId);
-                                  if (!tool) return null;
-                                  
+                                {step.tools.map(tool => {
                                   const IconComponent = tool.icon;
                                   return (
                                     <Badge 
-                                      key={toolId}
+                                      key={tool.id}
                                       variant="secondary"
                                       className="text-xs flex items-center gap-1"
                                     >
-                                      <IconComponent className="h-3 w-3" />
+                                      {IconComponent && React.createElement(IconComponent, { className: "h-3 w-3" })}
                                       {tool.name}
                                       <Button
                                         variant="ghost"
                                         size="sm"
-                                        onClick={() => removeToolFromStep(step.id, toolId)}
+                                        onClick={() => removeToolFromStep(step.id, tool.id)}
                                         className="h-4 w-4 p-0 ml-1"
                                       >
                                         <X className="h-2 w-2" />
@@ -754,7 +759,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
                   <Label htmlFor="method">HTTP Method</Label>
                   <Select 
                     value={toolConfig.method || 'GET'} 
-                    onValueChange={(value) => setToolConfig({...toolConfig, method: value})}
+                    onValueChange={(value) => setToolConfig({...toolConfig, method: value as 'GET' | 'POST' | 'PUT' | 'DELETE'})}
                   >
                     <SelectTrigger id="method">
                       <SelectValue />
