@@ -89,6 +89,7 @@ const defaultTools: Tool[] = [
 export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) {
   const [showTools, setShowTools] = useState(true);
   const [showSteps, setShowSteps] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
   const [tools, setTools] = useState<Tool[]>(defaultTools);
   const [steps, setSteps] = useState<WorkflowStep[]>([]);
   const [draggedTool, setDraggedTool] = useState<string | null>(null);
@@ -274,30 +275,46 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
       {/* Header Controls */}
       <div className="p-4 border-b border-border bg-background/95">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-foreground">Workflow Orchestrator</h2>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Workflow Orchestrator</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Click "Tools" to see available tools • Click "Steps" to build your workflow
+            </p>
+          </div>
           <div className="flex items-center space-x-2">
             <Button
               variant={showTools ? "default" : "outline"}
               size="sm"
-              onClick={() => setShowTools(!showTools)}
+              onClick={() => {
+                console.log('Tools button clicked! Current state:', showTools);
+                setShowTools(!showTools);
+              }}
               data-testid="toggle-tools"
+              className="font-medium"
             >
               <Wrench className="h-4 w-4 mr-1" />
-              Tools
+              Tools {showTools ? '(Hide)' : '(Show)'}
             </Button>
             <Button
               variant={showSteps ? "default" : "outline"}
               size="sm"
-              onClick={() => setShowSteps(!showSteps)}
+              onClick={() => {
+                console.log('Steps button clicked! Current state:', showSteps);
+                setShowSteps(!showSteps);
+              }}
               data-testid="toggle-steps"
+              className="font-medium"
             >
               <ArrowDown className="h-4 w-4 mr-1" />
-              Steps
+              Steps {showSteps ? '(Hide)' : '(Show)'}
             </Button>
             <Button
-              onClick={beginWorkflow}
+              onClick={() => {
+                console.log('Begin workflow clicked! Steps length:', steps.length);
+                beginWorkflow();
+              }}
               disabled={isExecuting || steps.length === 0}
-              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 font-medium"
               data-testid="begin-workflow"
             >
               {isExecuting ? (
@@ -308,7 +325,7 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
               ) : (
                 <>
                   <Play className="h-4 w-4 mr-1" />
-                  Begin
+                  {steps.length === 0 ? 'Add Steps First' : 'Begin Workflow'}
                 </>
               )}
             </Button>
@@ -322,11 +339,22 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
           
           {/* Central Project Node */}
           <div className="relative">
-            <Card className="w-48 h-32 border-2 border-primary shadow-xl bg-gradient-to-br from-primary/20 to-primary/5">
+            <Card 
+              className="w-48 h-32 border-2 border-primary shadow-xl bg-gradient-to-br from-primary/20 to-primary/5 cursor-pointer hover:shadow-2xl transition-all transform hover:scale-105"
+              onClick={() => {
+                console.log('Project core clicked!');
+                if (!showTools && !showSteps) {
+                  setShowTools(true);
+                }
+              }}
+              data-testid="project-core"
+            >
               <CardContent className="p-4 text-center">
                 <Target className="h-8 w-8 mx-auto mb-2 text-primary" />
                 <h3 className="font-bold text-lg">Project Core</h3>
-                <p className="text-sm text-muted-foreground">Workflow Center</p>
+                <p className="text-xs text-muted-foreground">
+                  {showTools || showSteps ? 'Workflow Active' : 'Click to start →'}
+                </p>
               </CardContent>
             </Card>
 
@@ -792,6 +820,39 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Interactive Guide Overlay */}
+      {showGuide && (
+        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <Card className="w-96 max-w-[90vw]">
+            <CardContent className="p-6 text-center">
+              <Target className="h-12 w-12 mx-auto mb-4 text-primary" />
+              <h3 className="text-lg font-bold mb-3">Welcome to Workflow Orchestrator!</h3>
+              <div className="space-y-2 text-sm text-left">
+                <p className="flex items-center gap-2">
+                  <Wrench className="h-4 w-4 text-primary" />
+                  <span><strong>Tools:</strong> Click to see available workflow tools</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <ArrowDown className="h-4 w-4 text-primary" />
+                  <span><strong>Steps:</strong> Click to build your workflow sequence</span>
+                </p>
+                <p className="flex items-center gap-2">
+                  <Target className="h-4 w-4 text-primary" />
+                  <span><strong>Project Core:</strong> Central hub - click to activate</span>
+                </p>
+              </div>
+              <Button 
+                onClick={() => setShowGuide(false)}
+                className="mt-4 w-full"
+                data-testid="close-guide"
+              >
+                Got it! Let's start
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
