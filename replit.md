@@ -40,7 +40,7 @@ AI Assistant Role: Complete website liaison with full control capabilities to ed
 - **Environment Variables**: Secure configuration management
 
 ### AI Integration
-- **Primary Model**: GPT-5 with full system awareness and building capabilities
+- **Dual-Model Architecture**: GPT-4o for real-time voice, GPT-5 for logic/management
 - **Enhanced AI Assistant**: Complete system control with ability to actually build tools, not just describe them
 - **Context Awareness**: Fully aware of Emergent Intelligence environment, capabilities, and available systems
 - **Tool Creation**: Can dynamically create and deploy real tools through Tool Registry

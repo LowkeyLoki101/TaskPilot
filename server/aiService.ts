@@ -91,8 +91,7 @@ Remember: You're not just an advisor - you're the builder. Create real, working 
     const response = await openai.chat.completions.create({
       model: "gpt-5",
       messages: messages,
-      max_completion_tokens: 500,
-      temperature: 0.7
+      max_completion_tokens: 500
     });
 
     return response.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";

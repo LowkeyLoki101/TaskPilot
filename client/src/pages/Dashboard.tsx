@@ -34,7 +34,7 @@ import { TaskCreateModal } from '@/components/TaskCreateModal';
 import { AIBrowser } from '@/components/AIBrowser';
 import { VoiceTranscription } from '@/components/VoiceTranscription';
 import { WorkstationTools } from '@/components/WorkstationTools';
-import logoPath from "@assets/Emergent Transparent Logo_1755110400429.png";
+// Logo will be added later - using placeholder for now
 import { Switch } from "@/components/ui/switch";
 
 export default function Dashboard() {
@@ -650,14 +650,9 @@ export default function Dashboard() {
               {/* Left Section - Title and AI Status */}
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
-                  <img 
-                    src={logoPath} 
-                    alt="Emergent Intelligence" 
-                    className="h-8 object-contain"
-                    style={{ 
-                      filter: 'invert(1) brightness(0) saturate(100%) contrast(1.2)'
-                    }}
-                  />
+                  <div className="h-8 w-8 bg-gradient-to-r from-primary to-secondary rounded flex items-center justify-center">
+                    <Bot className="h-5 w-5 text-white" />
+                  </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="flex items-center space-x-2 text-sm">
