@@ -47,10 +47,24 @@ export function useVoice() {
     recognition.onerror = (event: any) => {
       console.error('Speech recognition error:', event.error);
       setIsListening(false);
+      
+      // More specific error messages
+      let errorMessage = "Speech recognition error occurred";
+      if (event.error === 'not-allowed') {
+        errorMessage = "Microphone access denied. Please allow microphone permissions.";
+      } else if (event.error === 'no-speech') {
+        errorMessage = "No speech detected. Please try speaking again.";
+      } else if (event.error === 'aborted') {
+        // Don't show error for aborted - this is normal when stopping
+        return;
+      } else if (event.error === 'network') {
+        errorMessage = "Network error. Please check your internet connection.";
+      }
+      
       toast({
-        title: "Voice Error",
-        description: "Speech recognition error occurred",
-        variant: "destructive"
+        title: "Voice Recognition",
+        description: errorMessage,
+        variant: event.error === 'not-allowed' ? "destructive" : "default"
       });
     };
 

@@ -30,6 +30,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download, Bot } from "lucide-react";
 import { AgentDashboard } from '@/components/AgentDashboard';
 import { TaskCreateModal } from '@/components/TaskCreateModal';
+import { AIBrowser } from '@/components/AIBrowser';
 import logoPath from "@assets/Emergent Transparent Logo_1755110400429.png";
 import { Switch } from "@/components/ui/switch";
 
@@ -493,30 +494,23 @@ export default function Dashboard() {
     console.log("Executing command:", commandId);
     // TODO: Implement command actions
     switch (commandId) {
-      case "go-today":
-        setMobileTab("today");
+      case "go-mindmap":
+        setCurrentModule("mindmap");
         break;
-      case "go-inbox":
-        setMobileTab("inbox");
+      case "go-calendar":
+        setCurrentModule("calendar");
         break;
-      case "go-projects":
-        setMobileTab("projects");
+      case "go-tasks":
+        setCurrentModule("tasks");
+        break;
+      case "go-browser":
+        setCurrentModule("browser");
         break;
       // Add more command handlers
     }
   };
 
-  const getCurrentTasks = () => {
-    switch (mobileTab) {
-      case "today": return todayTasks;
-      case "inbox": return inboxTasks;
-      case "projects": return [];
-      default: return [];
-    }
-  };
-
-  const selectedTask = todayTasks.find(task => task.id === selectedTaskId) || 
-                       inboxTasks.find(task => task.id === selectedTaskId) || null;
+  const selectedTask = null; // Tasks from database now, not mock data
 
   // Responsive layout based on screen size
   if (isMobile) {
@@ -533,14 +527,16 @@ export default function Dashboard() {
             <div className="h-full p-4">
               <MindMap
                 projectId={currentProjectId}
-                selectedTaskId={selectedTaskId}
                 onTaskSelect={setSelectedTaskId}
               />
             </div>
           )}
           {currentModule === 'calendar' && (
             <div className="h-full">
-              <CalendarView />
+              <CalendarView 
+                projectId={currentProjectId}
+                onTaskSelect={setSelectedTaskId}
+              />
             </div>
           )}
           {currentModule === 'tasks' && (
@@ -567,11 +563,8 @@ export default function Dashboard() {
             </div>
           )}
           {currentModule === 'browser' && (
-            <div className="h-full flex items-center justify-center">
-              <div className="text-center">
-                <Globe className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">Browser view coming soon</p>
-              </div>
+            <div className="h-full">
+              <AIBrowser />
             </div>
           )}
 
@@ -932,7 +925,7 @@ export default function Dashboard() {
         ) : (
           <InspectorPane 
             selectedTaskId={selectedTaskId}
-            currentModule={currentModule}
+            currentModule={currentModule as any}
             autonomyMode={autonomyMode}
             aiActivityLog={aiActivityLog}
             lastMaintenanceRun={lastMaintenanceRun}
