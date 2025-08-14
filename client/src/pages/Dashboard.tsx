@@ -652,7 +652,7 @@ export default function Dashboard() {
       />
       
       {/* Desktop Two-Pane Layout - Workspace + Inspector */}
-      <div className="h-[calc(100vh-3.5rem)] grid grid-cols-1 lg:grid-cols-[1fr,300px] overflow-hidden">
+      <div className="h-[calc(100vh-3.5rem)] grid grid-cols-1 lg:grid-cols-[1fr,280px] overflow-hidden">
 
         {/* Center Pane - Canvas */}
         <div className="flex flex-col min-w-0 bg-background h-full overflow-hidden">
@@ -698,14 +698,13 @@ export default function Dashboard() {
                     
                     <div 
                       id="module-selector"
-                      className="flex items-center border rounded-lg p-1 bg-background max-w-[400px] overflow-x-hidden scrollbar-hide"
-                      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                      className="flex items-center border rounded-lg p-1 bg-background max-w-[500px] overflow-x-auto no-scrollbar whitespace-nowrap"
                     >
                       <Button
                         variant={currentModule === 'mindmap' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('mindmap')}
-                        className="h-7 px-2 shrink-0 text-xs"
+                        className="h-7 px-2 flex-shrink-0 text-xs"
                         data-testid="module-mindmap"
                       >
                         <Brain className="h-3 w-3 mr-1" />
@@ -715,7 +714,7 @@ export default function Dashboard() {
                         variant={currentModule === 'calendar' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('calendar')}
-                        className="h-7 px-2 shrink-0 text-xs"
+                        className="h-7 px-2 flex-shrink-0 text-xs"
                         data-testid="module-calendar"
                       >
                         <Calendar className="h-3 w-3 mr-1" />
@@ -725,7 +724,7 @@ export default function Dashboard() {
                         variant={currentModule === 'tasks' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('tasks')}
-                        className="h-7 px-2 shrink-0 text-xs"
+                        className="h-7 px-2 flex-shrink-0 text-xs"
                         data-testid="module-tasks"
                       >
                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -735,7 +734,7 @@ export default function Dashboard() {
                         variant={currentModule === 'activity' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('activity')}
-                        className="h-7 px-2 shrink-0 text-xs"
+                        className="h-7 px-2 flex-shrink-0 text-xs"
                         data-testid="module-activity"
                       >
                         <Bot className="h-3 w-3 mr-1" />
@@ -745,7 +744,7 @@ export default function Dashboard() {
                         variant={currentModule === 'feature' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('feature')}
-                        className="h-7 px-2 shrink-0 text-xs"
+                        className="h-7 px-2 flex-shrink-0 text-xs"
                         data-testid="module-feature"
                       >
                         <Sparkles className="h-3 w-3 mr-1" />
@@ -755,7 +754,7 @@ export default function Dashboard() {
                         variant={currentModule === 'browser' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('browser')}
-                        className="h-7 px-2 shrink-0 text-xs"
+                        className="h-7 px-2 flex-shrink-0 text-xs"
                         data-testid="module-browser"
                       >
                         <Globe className="h-3 w-3 mr-1" />
@@ -765,7 +764,7 @@ export default function Dashboard() {
                         variant={currentModule === 'diagnostics' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('diagnostics')}
-                        className="h-7 px-2 shrink-0 text-xs"
+                        className="h-7 px-2 flex-shrink-0 text-xs"
                         data-testid="module-diagnostics"
                       >
                         <BarChart3 className="h-3 w-3 mr-1" />
@@ -775,7 +774,7 @@ export default function Dashboard() {
                         variant={currentModule === 'agents' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('agents')}
-                        className="h-7 px-2 shrink-0 text-xs"
+                        className="h-7 px-2 flex-shrink-0 text-xs"
                         data-testid="module-agents"
                       >
                         <Bot className="h-3 w-3 mr-1" />
@@ -785,7 +784,7 @@ export default function Dashboard() {
                         variant={currentModule === 'tools' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('tools')}
-                        className="h-7 px-2 shrink-0 text-xs"
+                        className="h-7 px-2 flex-shrink-0 text-xs"
                         data-testid="module-tools"
                       >
                         <Wrench className="h-3 w-3 mr-1" />

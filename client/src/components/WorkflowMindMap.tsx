@@ -179,6 +179,23 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
     setSteps(newSteps);
   };
 
+  // quick helpers to make the buttons useful
+  const quickAddTool = (tool: Partial<Tool> & { config: NonNullable<Tool['config']> }) => {
+    const t: Tool = {
+      id: `quick-${Date.now()}`,
+      type: 'custom',
+      name: tool.name || 'Custom Tool',
+      icon: getActionIcon(tool.config.action),
+      description: getToolDescription(tool.config),
+      config: tool.config,
+    } as Tool;
+    setTools(prev => [...prev, t]);
+    // open config so the user can adjust
+    setConfiguredTool(t);
+    setToolConfig(t.config || { action: 'ai_prompt' });
+    setShowConfigDialog(true);
+  };
+
   const beginWorkflow = async () => {
     if (steps.length === 0) {
       toast({
@@ -657,15 +674,42 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
             </Badge>
           </div>
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                quickAddTool({
+                  name: 'Web Search',
+                  config: { action: 'api_call', method: 'GET', endpoint: 'https://api.duckduckgo.com/?q={{query}}&format=json', outputVariable: 'search_results' }
+                })
+              }
+            >
               <Globe className="h-3 w-3 mr-1" />
               Web Search
             </Button>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                quickAddTool({
+                  name: 'Generate Image',
+                  config: { action: 'ai_prompt', prompt: 'Create an image: {{prompt}}', outputVariable: 'image_url' }
+                })
+              }
+            >
               <Image className="h-3 w-3 mr-1" />
               Generate Image
             </Button>
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                quickAddTool({
+                  name: 'Knowledge Base',
+                  config: { action: 'file_operation', fileOperation: 'read', filePath: '/kb/{{topic}}.md', outputVariable: 'kb_text' }
+                })
+              }
+            >
               <FileText className="h-3 w-3 mr-1" />
               Knowledge Base
             </Button>

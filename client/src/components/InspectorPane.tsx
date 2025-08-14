@@ -120,11 +120,13 @@ export function InspectorPane({
   }
 
   return (
-    <div className={`flex flex-col h-full bg-card border-l border-border overflow-hidden ${className}`} data-testid="inspector-pane">
+    <div className={`flex flex-col h-full bg-card border-l border-border overflow-hidden min-w-[280px] max-w-[340px] ${className}`} data-testid="inspector-pane">
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-        <div className="px-3 pt-3 pb-2">
-          <TabsList className="grid w-full grid-cols-5">
+        {/* compact, slightly lower header */}
+        <div className="px-2 pt-1 pb-1 border-b border-border/60 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+          {/* horizontal scroll; no clipping */}
+          <TabsList className="w-full flex gap-1 overflow-x-auto no-scrollbar whitespace-nowrap">
             <TabsTrigger value="ai" className="text-xs">
               <Brain className="h-3 w-3 mr-1" />
               AI

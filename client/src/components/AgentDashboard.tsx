@@ -231,8 +231,9 @@ export function AgentDashboard() {
 
       {/* Main Dashboard */}
       <Tabs defaultValue="agents" className="space-y-4">
-        <div className="flex items-center justify-between">
-          <TabsList>
+        <div className="flex items-center justify-between gap-3">
+          {/* prevent clipping on small widths */}
+          <TabsList className="max-w-full overflow-x-auto whitespace-nowrap no-scrollbar">
             <TabsTrigger value="agents">Agents</TabsTrigger>
             <TabsTrigger value="workflows">Workflows</TabsTrigger>
             <TabsTrigger value="metrics">Metrics</TabsTrigger>
