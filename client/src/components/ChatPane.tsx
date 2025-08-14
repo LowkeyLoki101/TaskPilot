@@ -165,12 +165,15 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
                           ul: ({children}) => <ul className="list-disc pl-4 mb-2 text-foreground">{children}</ul>,
                           ol: ({children}) => <ol className="list-decimal pl-4 mb-2 text-foreground">{children}</ol>,
                           li: ({children}) => <li className="mb-1 text-foreground">{children}</li>,
-                          code: ({node, inline, className, children, ...props}) => 
-                            inline ? (
+                          code: ({className, children, ...props}) => {
+                            const isInline = !className?.includes('language-');
+                            return isInline ? (
                               <code className="bg-muted px-1 py-0.5 rounded text-xs text-foreground" {...props}>{children}</code>
                             ) : (
-                              <pre className="bg-muted p-2 rounded overflow-x-auto"><code className="text-xs text-foreground" {...props}>{children}</code></pre>
-                            ),
+                              <code className="block bg-muted p-2 rounded overflow-x-auto text-xs text-foreground whitespace-pre" {...props}>{children}</code>
+                            );
+                          },
+                          pre: ({children}) => <div className="my-2">{children}</div>,
                           blockquote: ({children}) => <blockquote className="border-l-2 border-primary pl-2 my-2 text-foreground">{children}</blockquote>,
                         }}
                       >

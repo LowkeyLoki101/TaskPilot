@@ -34,6 +34,7 @@ import { TaskCreateModal } from '@/components/TaskCreateModal';
 import { AIBrowser } from '@/components/AIBrowser';
 import { VoiceTranscription } from '@/components/VoiceTranscription';
 import { WorkstationTools } from '@/components/WorkstationTools';
+import { ComprehensiveActivityLogger } from '@/components/ComprehensiveActivityLogger';
 // Logo will be added later - using placeholder for now
 import { Switch } from "@/components/ui/switch";
 
@@ -558,6 +559,12 @@ export default function Dashboard() {
                 <AgentDashboard />
               </div>
             )}
+            
+            {currentModule === 'activity' && (
+              <div className="h-full p-4">
+                <ComprehensiveActivityLogger />
+              </div>
+            )}
             {currentModule === 'diagnostics' && (
               <div className="h-full p-4">
                 <DiagnosticsPanel 
@@ -720,6 +727,16 @@ export default function Dashboard() {
                         <span>Tasks</span>
                       </Button>
                       <Button
+                        variant={currentModule === 'activity' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setCurrentModule('activity')}
+                        className="h-7 px-2 shrink-0 text-xs"
+                        data-testid="module-activity"
+                      >
+                        <Bot className="h-3 w-3 mr-1" />
+                        <span>AI Activity</span>
+                      </Button>
+                      <Button
                         variant={currentModule === 'browser' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('browser')}
@@ -872,6 +889,11 @@ export default function Dashboard() {
                     projectId={currentProjectId}
                     onTaskSelect={handleTaskSelect}
                   />
+                )}
+                {currentModule === 'activity' && (
+                  <div className="h-full p-4">
+                    <ComprehensiveActivityLogger />
+                  </div>
                 )}
                 {currentModule === 'browser' && (
                   <div className="h-full flex flex-col bg-background">
