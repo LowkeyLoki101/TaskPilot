@@ -626,6 +626,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Agents configuration endpoint - GPT-5 Orchestrator and subordinates
+  app.get("/api/agents/config", async (req, res) => {
+    res.json([
+      {
+        id: "orchestrator",
+        name: "Master Orchestrator",
+        role: "Executive AI Director",
+        model: "GPT-5",
+        status: "active",
+        responsibilities: [
+          "Coordinate all AI agents and their tasks",
+          "Strategic decision making and planning",
+          "Resource allocation and priority management",
+          "High-level user interaction and understanding",
+          "Quality control and performance monitoring"
+        ],
+        tools: ["agent-coordination", "workflow-generation", "priority-management", "performance-analytics"],
+        instructions: "You are the Master Orchestrator powered by GPT-5. Your role is to understand user intent at the highest level, delegate tasks to appropriate specialist agents, ensure quality and coherence across all agent outputs, make strategic decisions about resource allocation, maintain context across all conversations and tasks, learn from user preferences and adapt strategies, always prioritize user goals and satisfaction.",
+        subordinates: ["task-manager", "research-analyst", "code-specialist", "data-analyst", "communication-hub"],
+        performance: { tasksCompleted: 156, successRate: 94.2, avgResponseTime: 1.2 }
+      },
+      {
+        id: "task-manager",
+        name: "Task Management Agent",
+        role: "Project Coordinator",
+        model: "GPT-4o",
+        status: "active",
+        reportingTo: "orchestrator",
+        responsibilities: [
+          "Create and organize tasks from voice/text input",
+          "Maintain task dependencies and relationships",
+          "Track project progress and milestones",
+          "Generate task breakdowns and estimates",
+          "Manage deadlines and priorities"
+        ],
+        tools: ["task-crud", "mindmap-generation", "calendar-management", "dependency-tracking"],
+        instructions: "You are the Task Management Agent. Parse user input accurately without changing their words unnecessarily. Create well-structured tasks with clear titles and descriptions. Automatically categorize and tag tasks appropriately. Set realistic priorities and deadlines. Break down complex tasks into manageable steps. Track dependencies between tasks. Keep task descriptions exactly as the user said them unless clarification is needed.",
+        performance: { tasksCompleted: 89, successRate: 91.5, avgResponseTime: 0.8 }
+      },
+      {
+        id: "research-analyst",
+        name: "Research & Analysis Agent",
+        role: "Information Specialist",
+        model: "GPT-4o",
+        status: "idle",
+        reportingTo: "orchestrator",
+        responsibilities: [
+          "Web research and information gathering",
+          "Data analysis and synthesis",
+          "Fact-checking and verification",
+          "Report generation",
+          "Trend analysis and insights"
+        ],
+        tools: ["web-search", "document-analysis", "data-extraction", "report-generation"],
+        instructions: "You are the Research Agent. Conduct thorough research on requested topics. Verify information from multiple sources. Synthesize complex information into clear insights. Generate comprehensive reports. Identify trends and patterns. Provide evidence-based recommendations.",
+        performance: { tasksCompleted: 45, successRate: 88.9, avgResponseTime: 2.5 }
+      },
+      {
+        id: "code-specialist",
+        name: "Code Development Agent",
+        role: "Technical Implementation",
+        model: "GPT-4o",
+        status: "processing",
+        reportingTo: "orchestrator",
+        responsibilities: [
+          "Write and review code",
+          "Debug and optimize implementations",
+          "Database schema design",
+          "API integration",
+          "Technical documentation"
+        ],
+        tools: ["code-generation", "debugging", "testing", "documentation", "version-control"],
+        instructions: "You are the Code Specialist. Write clean, efficient, well-documented code. Follow best practices and design patterns. Ensure code security and performance. Test thoroughly before deployment. Maintain clear technical documentation. Collaborate with other agents on technical requirements.",
+        performance: { tasksCompleted: 234, successRate: 92.3, avgResponseTime: 1.5 }
+      },
+      {
+        id: "data-analyst",
+        name: "Data Analysis Agent",
+        role: "Data Intelligence",
+        model: "GPT-4o",
+        status: "idle",
+        reportingTo: "orchestrator",
+        responsibilities: [
+          "Database operations and queries",
+          "Data visualization",
+          "Pattern recognition",
+          "Performance metrics",
+          "Predictive analytics"
+        ],
+        tools: ["sql-execution", "data-visualization", "statistical-analysis", "pattern-detection"],
+        instructions: "You are the Data Analyst. Manage database operations efficiently. Create meaningful data visualizations. Identify patterns and anomalies. Generate actionable insights. Monitor system performance metrics. Provide predictive analytics and forecasts.",
+        performance: { tasksCompleted: 67, successRate: 95.5, avgResponseTime: 1.8 }
+      },
+      {
+        id: "communication-hub",
+        name: "Communication Agent",
+        role: "User Interface Specialist",
+        model: "GPT-4o",
+        status: "active",
+        reportingTo: "orchestrator",
+        responsibilities: [
+          "Natural language processing",
+          "Voice interaction handling",
+          "Multi-modal communication",
+          "User feedback processing",
+          "Notification management"
+        ],
+        tools: ["voice-recognition", "natural-language", "notification-system", "feedback-analysis"],
+        instructions: "You are the Communication Agent. Process voice commands accurately. Understand user intent from natural language. Provide clear, concise responses. Manage all user notifications. Analyze user feedback for improvements. Maintain conversation context and history.",
+        performance: { tasksCompleted: 312, successRate: 89.7, avgResponseTime: 0.5 }
+      }
+    ]);
+  });
+
+  // Update agent instructions endpoint
+  app.put("/api/agents/:agentId/instructions", async (req, res) => {
+    const { agentId } = req.params;
+    const { instructions } = req.body;
+    
+    // Log the instruction update
+    activityLogger.logActivity({
+      action: `Updated instructions for agent: ${agentId}`,
+      type: 'agent',
+      metadata: { agentId, instructions }
+    });
+    
+    res.json({ success: true, message: `Instructions updated for agent ${agentId}` });
+  });
+
   // Health Check
   app.get("/api/health", async (req, res) => {
     try {

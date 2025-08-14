@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
 import Header from "@/components/Header";
 
 import MindMap from "@/components/MindMap";
@@ -27,7 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download, Bot } from "lucide-react";
+import { Brain, Sparkles, Calendar, Inbox, CheckCircle, Clock, User, Users, Workflow, Mic, Monitor, Youtube, Bell, Bug, Globe, BarChart3, Settings, Plus, Search, Download, Bot } from "lucide-react";
 import { AgentDashboard } from '@/components/AgentDashboard';
 import { TaskCreateModal } from '@/components/TaskCreateModal';
 import { AIBrowser } from '@/components/AIBrowser';
@@ -747,6 +748,17 @@ export default function Dashboard() {
                   <Settings className="h-3 w-3 mr-1" />
                   Maintenance
                 </Button>
+                
+                <Link to="/agents">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7"
+                  >
+                    <Users className="h-3 w-3 mr-1" />
+                    AI Agents
+                  </Button>
+                </Link>
                 
                 <Button 
                   size="sm"
