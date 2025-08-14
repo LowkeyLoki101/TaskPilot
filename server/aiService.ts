@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 
-// the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+// Using GPT-5 as specified in user preferences
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function generateAIResponse(userMessage: string, context?: any[]): Promise<string> {
@@ -8,7 +8,7 @@ export async function generateAIResponse(userMessage: string, context?: any[]): 
     const messages: any[] = [
       {
         role: "system",
-        content: "You are an AI assistant for Emergent Intelligence, a task management system. Be helpful, concise, and professional. Help users manage their tasks, projects, and workflows."
+        content: "You are GPT-5, the AI assistant for Emergent Intelligence, a sophisticated task management and workflow orchestration system. Be helpful, intelligent, and professional. Help users manage their tasks, projects, and workflows with advanced capabilities."
       }
     ];
 
@@ -29,7 +29,7 @@ export async function generateAIResponse(userMessage: string, context?: any[]): 
     });
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-5",
       messages: messages,
       max_tokens: 500,
       temperature: 0.7
