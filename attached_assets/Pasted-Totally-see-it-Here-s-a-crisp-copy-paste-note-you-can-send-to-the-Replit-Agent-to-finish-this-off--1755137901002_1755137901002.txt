@@ -1,0 +1,194 @@
+Totally see it. Here’s a crisp, copy-paste note you can send to the Replit Agent to finish this off. It explains what’s broken and gives exact patches to apply so nothing runs behind the chat, “Add Step” stays visible, and the chat is scrollable with a sticky composer.
+
+⸻
+
+Message for Replit Agent — Fix layout + scrolling + steps panel
+
+We still have 3 UX bugs:
+	1.	Top toolbar & tools overflow behind the right chat panel.
+	2.	Chat window doesn’t reliably scroll to the bottom / input not reachable.
+	3.	Steps sheet (“Add Step”, step description) can be hidden/off-screen; description sometimes not editable.
+
+Please apply the following changes.
+
+⸻
+
+1) App shell: 2-column grid + sticky header
+
+Make the root layout a grid: header (56px), main (1fr), with a fixed right column for the chat panel. This prevents center content from sliding under the chat.
+
+// client/src/components/Layout/AppShell.tsx (or your main layout component)
+export default function AppShell({ children, RightPanel }: { children: React.ReactNode; RightPanel: React.FC }) {
+  return (
+    <div
+      className="h-screen w-screen grid"
+      style={{ gridTemplateRows: "56px 1fr", gridTemplateColumns: "1fr 380px" }}
+    >
+      {/* Header */}
+      <header className="col-span-2 h-14 sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+        {/* existing toolbar */}
+      </header>
+
+      {/* Main content (left) */}
+      <main className="row-start-2 col-start-1 overflow-hidden bg-background">
+        <div className="h-full overflow-auto pr-[380px]"> {/* reserve space so nothing goes under the chat */}
+          {children}
+        </div>
+      </main>
+
+      {/* Right chat panel (fixed width) */}
+      <aside className="row-start-2 col-start-2 border-l border-border bg-card z-30">
+        <RightPanel />
+      </aside>
+    </div>
+  );
+}
+
+	•	Header uses z-40; chat panel z-30; main stays default — no overlap.
+	•	Note the pr-[380px] on the left scroller to keep tools from hiding under the chat.
+
+⸻
+
+2) Chat panel: real scroll area + sticky composer + auto-scroll
+
+Give the chat panel three regions: sticky header, scrollable messages, sticky composer. Use min-h-0 flex-1 overflow-auto for the message list container (this is the common missing piece).
+
+// client/src/components/Chat/AssistantPanel.tsx (or your current chat pane)
+import { useEffect, useRef } from "react";
+
+export function AssistantPanel() {
+  const bottomRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [/* messages length state here, e.g. messages.length */]);
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Tabs/header */}
+      <div className="shrink-0 h-12 px-3 flex items-center justify-between border-b border-border bg-card sticky top-0 z-10">
+        {/* AI | Task | Feature | Debug */}
+      </div>
+
+      {/* Scrollable messages */}
+      <div className="min-h-0 flex-1 overflow-auto pb-[calc(env(safe-area-inset-bottom)+76px)]">
+        <div className="p-3 space-y-3">
+          {/* render messages; ensure text wraps: whitespace-pre-wrap break-words */}
+          <div ref={bottomRef} />
+        </div>
+      </div>
+
+      {/* Sticky composer */}
+      <div className="shrink-0 border-t border-border bg-card p-2 sticky bottom-0 z-10">
+        {/* input + send button */}
+      </div>
+    </div>
+  );
+}
+
+Also ensure each message bubble text uses:
+
+<p className="text-sm whitespace-pre-wrap break-words">{msg.content}</p>
+
+(remove any duplicate lines that printed content twice)
+
+⸻
+
+3) Steps panel: keep “Add Step” visible, center it, and make description editable
+
+A) Positioning: center sheet under header, never off-screen
+
+Change the Steps container from absolute near the center node to a fixed, centered panel that respects the viewport.
+
+// In WorkflowMindMap.tsx where Steps panel renders:
+{showSteps && (
+  <div className="fixed top-[72px] left-1/2 -translate-x-1/2 z-20 w-[720px] max-w-[92vw]">
+    <div className="rounded-lg border border-border bg-card shadow-xl">
+      {/* Sticky header with Add Step always visible */}
+      <div className="sticky top-0 z-10 bg-card/95 backdrop-blur px-4 py-2 border-b border-border flex items-center justify-between">
+        <h4 className="font-semibold">Workflow Steps</h4>
+        <Button onClick={addNewStep} size="sm" variant="default">
+          <Plus className="h-3 w-3 mr-1" /> Add Step
+        </Button>
+      </div>
+
+      {/* Scrollable steps list */}
+      <div className="max-h-[calc(100vh-160px)] overflow-auto p-3">
+        {/* ...render steps as before... */}
+      </div>
+    </div>
+  </div>
+)}
+
+B) Editable description: click-to-edit input with onBlur save
+
+Make sure the description block toggles to an <Input> and writes back to state, then persists.
+
+// inside each Step card
+{editingStepDesc === step.id ? (
+  <Input
+    value={stepDescription}
+    onChange={(e) => setStepDescription(e.target.value)}
+    autoFocus
+    onBlur={() => {
+      const next = steps.map(s => s.id === step.id ? { ...s, description: stepDescription } : s);
+      setSteps(next);
+      // if you have a save() or mutation, call it here:
+      // saveWorkflow(tools, next);
+      setEditingStepDesc(null);
+    }}
+    onKeyDown={(e) => {
+      if (e.key === "Enter") (e.currentTarget as HTMLInputElement).blur();
+      if (e.key === "Escape") setEditingStepDesc(null);
+    }}
+    className="text-sm mt-1 mb-3"
+    placeholder="Describe what happens in this step"
+  />
+) : (
+  <p
+    className="text-sm text-muted-foreground mt-1 mb-3 cursor-text hover:text-foreground"
+    onClick={() => {
+      setEditingStepDesc(step.id);
+      setStepDescription(step.description || "");
+    }}
+  >
+    {step.description || "Click to describe what happens in this step"}
+  </p>
+)}
+
+C) Don’t let the Steps panel capture the page scroll
+
+We already bounded it with max-h + overflow-auto, so the page won’t jump and the panel scrolls internally.
+
+⸻
+
+4) Misc fixes to avoid regressions
+	•	Remove unused imports you added earlier in server/routes.ts:
+
+// delete if unused
+// import { advancedFeatureProposals } from "@shared/schema";
+// import { eq, desc } from "drizzle-orm";
+
+
+	•	Chat message bubble: ensure there’s only one <p>; keep whitespace-pre-wrap break-words.
+	•	Reserve space for the chat on the main scroller: pr-[380px] (match right panel width).
+
+⸻
+
+Acceptance checks
+	•	Header stays visible; nothing scrolls behind it.
+	•	Left content never slips under the chat; tools are fully visible.
+	•	Chat messages scroll independently; composer is always on screen.
+	•	Clicking a step description always opens an input; on blur it saves.
+	•	“Add Step” button is always visible at the top of the Steps sheet.
+
+If any file paths differ, apply the same class patterns in the corresponding components.
+
+When done, please reply with the updated files:
+	•	AppShell.tsx (or the layout file you modified)
+	•	AssistantPanel.tsx (or the chat pane file)
+	•	WorkflowMindMap.tsx (steps section changes)
+
+⸻
+
+(aside) if we later want the Steps to slide in from the right instead, we can swap the centered sheet for a Drawer with the same inner structure.

@@ -228,6 +228,7 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
               placeholder="Type or use voice..."
               className="flex-1 h-8 text-xs"
               disabled={sendMessage.isPending}
+              autoFocus
               data-testid="input-chat-message"
             />
             

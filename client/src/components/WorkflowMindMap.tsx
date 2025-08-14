@@ -96,6 +96,8 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
   const [editingStepDesc, setEditingStepDesc] = useState<string | null>(null);
   const [stepDescription, setStepDescription] = useState<string>('');
   const [currentExecutionId, setCurrentExecutionId] = useState<string | null>(null);
+  const [isExecuting, setIsExecuting] = useState(false);
+  const [currentStep, setCurrentStep] = useState<number | null>(null);
   
   // Use the real API hooks
   const { workflow, isLoading, saveWorkflow, executeWorkflow } = useWorkflow(projectId);

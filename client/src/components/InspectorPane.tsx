@@ -151,38 +151,40 @@ export function InspectorPane({
         <div className="flex-1 overflow-hidden">
           <TabsContent value="ai" className="h-full mt-0 flex flex-col">
             <div className="flex-1 flex flex-col overflow-hidden">
-              {/* AI Chat Interface */}
-              <div className="flex-1 overflow-hidden">
+              {/* AI Chat Interface - Takes 65% of space */}
+              <div className="flex-[2] min-h-0 overflow-hidden">
                 <ChatPane 
                   projectId={projectId}
                   className="h-full border-none"
                 />
               </div>
               
-              {/* AI Activity Feed */}
-              <div className="border-t border-border bg-muted/20 p-3">
-                <div className="space-y-2">
+              {/* AI Activity Feed - Takes 35% of space */}
+              <div className="flex-1 border-t border-border bg-muted/20 flex flex-col min-h-0">
+                <div className="p-3 space-y-2 flex flex-col h-full">
                   <div className="flex items-center gap-1 text-xs font-medium">
                     <Activity className="h-3 w-3 text-primary" />
                     Recent AI Activity
                   </div>
-                  <div className="space-y-1 max-h-24 overflow-y-auto">
-                    {agentActivity.length > 0 ? agentActivity.slice(0, 3).map((activity, index) => (
-                      <div key={index} className="flex items-start gap-2 p-1 bg-background/50 rounded text-xs">
-                        <div className={`h-2 w-2 rounded-full mt-1 shrink-0 ${
-                          activity.type === 'maintenance' ? 'bg-blue-500' :
-                          activity.type === 'enhancement' ? 'bg-green-500' :
-                          activity.type === 'bug' ? 'bg-red-500' : 'bg-gray-500'
-                        }`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{activity.action}</p>
-                          <p className="text-muted-foreground">{activity.time}</p>
+                  <ScrollArea className="flex-1">
+                    <div className="space-y-1 pr-2">
+                      {agentActivity.length > 0 ? agentActivity.map((activity, index) => (
+                        <div key={index} className="flex items-start gap-2 p-2 bg-background/50 rounded text-xs hover:bg-background/80 transition-colors">
+                          <div className={`h-2 w-2 rounded-full mt-1 shrink-0 ${
+                            activity.type === 'maintenance' ? 'bg-blue-500' :
+                            activity.type === 'enhancement' ? 'bg-green-500' :
+                            activity.type === 'bug' ? 'bg-red-500' : 'bg-gray-500'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium">{activity.action}</p>
+                            <p className="text-muted-foreground">{activity.time}</p>
+                          </div>
                         </div>
-                      </div>
-                    )) : (
-                      <p className="text-xs text-muted-foreground">No recent AI activity</p>
-                    )}
-                  </div>
+                      )) : (
+                        <p className="text-xs text-muted-foreground p-2">No recent AI activity</p>
+                      )}
+                    </div>
+                  </ScrollArea>
                 </div>
               </div>
             </div>
