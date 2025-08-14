@@ -181,7 +181,11 @@ export function WorkflowMindMap({ projectId, className }: WorkflowMindMapProps) 
 
   const beginWorkflow = async () => {
     if (steps.length === 0) {
-      alert('Please add some steps first');
+      toast({
+        title: "No steps added",
+        description: "Please add some steps to your workflow first",
+        variant: "destructive"
+      });
       return;
     }
 

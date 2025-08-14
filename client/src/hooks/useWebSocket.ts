@@ -32,7 +32,18 @@ export function useWebSocket(projectId: string) {
     };
 
     ws.onclose = () => {
-      console.log("WebSocket disconnected");
+      console.log("WebSocket disconnected, attempting to reconnect...");
+      // Attempt to reconnect after 3 seconds
+      setTimeout(() => {
+        if (ws.readyState === WebSocket.CLOSED) {
+          console.log("Reconnecting WebSocket...");
+          const newWs = new WebSocket(`${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`);
+          newWs.onopen = ws.onopen;
+          newWs.onmessage = ws.onmessage;
+          newWs.onclose = ws.onclose;
+          newWs.onerror = ws.onerror;
+        }
+      }, 3000);
     };
 
     ws.onerror = (error) => {

@@ -10,7 +10,7 @@ export default function Header({ onVoiceToggle, isVoiceActive }: HeaderProps) {
   return (
     <header className="bg-[#0b0b0b] border-b border-zinc-800 sticky top-0 z-50">
       <div className="max-w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-14">
           {/* Logo and Brand */}
           <div className="flex items-center space-x-3">
             {/* Original SVG logo restored */}

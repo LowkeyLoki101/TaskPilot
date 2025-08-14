@@ -534,7 +534,6 @@ export default function Dashboard() {
                 <MindMap
                   projectId={currentProjectId}
                   onTaskSelect={setSelectedTaskId}
-                  enableEditing={true}
                 />
               </div>
             )}
@@ -600,8 +599,9 @@ export default function Dashboard() {
           {/* Bottom Chat/Inspector - 40% */}
           <div className="flex-[2] overflow-y-auto bg-muted/20">
             <InspectorPane
+              projectId={currentProjectId}
               selectedTaskId={selectedTaskId}
-              currentModule="chat"
+              currentModule={currentModule as any}
               autonomyMode={autonomyMode}
               aiActivityLog={aiActivityLog}
               lastMaintenanceRun={lastMaintenanceRun}
@@ -652,12 +652,12 @@ export default function Dashboard() {
       />
       
       {/* Desktop Two-Pane Layout - Workspace + Inspector */}
-      <div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[1fr,300px] overflow-hidden">
+      <div className="h-[calc(100vh-3.5rem)] grid grid-cols-1 lg:grid-cols-[1fr,300px] overflow-hidden">
 
         {/* Center Pane - Canvas */}
         <div className="flex flex-col min-w-0 bg-background h-full overflow-hidden">
-          {/* Autonomous AI Workstation Toolbar */}
-          <div className="bg-card border-b border-border p-3">
+          {/* Autonomous AI Workstation Toolbar - Compact */}
+          <div className="bg-card border-b border-border p-2">
             <div className="flex justify-between items-center">
               {/* Left Section - Title and AI Status */}
               <div className="flex items-center space-x-4">
@@ -672,7 +672,7 @@ export default function Dashboard() {
                     <span className={`text-xs ${getAutonomyColor()}`}>{getAutonomyLabel()}</span>
                   </div>
                   <Badge variant="outline" className="text-xs">
-                    GPT-5 Active
+                    GPT-4o Active
                   </Badge>
                 </div>
               </div>

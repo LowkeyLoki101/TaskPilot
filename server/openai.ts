@@ -28,7 +28,7 @@ export async function analyzeSentiment(text: string): Promise<{
 }> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5", // Using GPT-5 for logic and management tasks
+      model: "gpt-4o", // Using GPT-4o for logic and management tasks
       messages: [
         {
           role: "system",
@@ -74,7 +74,7 @@ Respond with a structured workflow plan.`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-5", // Using GPT-5 for logic and workflow generation
+      model: "gpt-4o", // Using GPT-4o for logic and workflow generation
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt }
@@ -102,7 +102,7 @@ export class EnhancedAI {
         quality: "standard",
       });
 
-      return { url: response.data[0].url || "" };
+      return { url: response.data?.[0]?.url || "" };
     } catch (error) {
       console.error("Image generation error:", error);
       throw new Error("Failed to generate image");

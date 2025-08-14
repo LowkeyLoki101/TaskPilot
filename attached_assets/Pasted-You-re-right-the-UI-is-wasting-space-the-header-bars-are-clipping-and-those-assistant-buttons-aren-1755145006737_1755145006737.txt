@@ -1,0 +1,183 @@
+You’re right—the UI is wasting space, the header bars are clipping, and those assistant buttons aren’t wired. Here are surgical fixes you can paste in now. They do three things:
+	1.	Make the top module bar wider/scrollable (no hidden items).
+	2.	Fix the InspectorPane header (lower, compact tabs, no overflow).
+	3.	Make the “GPT-5 Assistant” buttons actually do work in the workflow canvas.
+
+⸻
+
+1) InspectorPane: compact header + scrollable tabs (no clipping)
+
+What this fixes
+	•	Right header too high → lowered + tighter padding
+	•	Tab row overflowing → horizontal scroll instead of clipping
+	•	Agents tab can stay here for now, but won’t push other tabs off-screen
+
+Patch — client/src/components/InspectorPane.tsx
+
+-  <div className={`flex flex-col h-full bg-card border-l border-border overflow-hidden ${className}`} data-testid="inspector-pane">
++  <div className={`flex flex-col h-full bg-card border-l border-border overflow-hidden min-w-[280px] max-w-[340px] ${className}`} data-testid="inspector-pane">
+...
+-      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+-        <div className="px-3 pt-3 pb-2">
+-          <TabsList className="grid w-full grid-cols-5">
++      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
++        {/* compact, slightly lower header */}
++        <div className="px-2 pt-1 pb-1 border-b border-border/60 bg-card/80 backdrop-blur supports-[backdrop-filter]:bg-card/60">
++          {/* horizontal scroll; no clipping */}
++          <TabsList className="w-full flex gap-1 overflow-x-auto no-scrollbar whitespace-nowrap">
+             <TabsTrigger value="ai" className="text-xs">
+               <Brain className="h-3 w-3 mr-1" />
+               AI
+             </TabsTrigger>
+             <TabsTrigger value="task" className="text-xs">
+               <FileText className="h-3 w-3 mr-1" />
+               Task
+             </TabsTrigger>
+             <TabsTrigger value="feature" className="text-xs">
+               <Lightbulb className="h-3 w-3 mr-1" />
+               Feature
+             </TabsTrigger>
+             <TabsTrigger value="diagnostics" className="text-xs">
+               <Bug className="h-3 w-3 mr-1" />
+               Debug
+             </TabsTrigger>
+             <TabsTrigger value="agents" className="text-xs">
+               <Users className="h-3 w-3 mr-1" />
+               Agents
+             </TabsTrigger>
+           </TabsList>
+         </div>
+
+Add a tiny utility to hide the scrollbar (optional):
+
+/* add to your globals.css (Tailwind) */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+
+⸻
+
+2) AgentDashboard tab header not fitting → make its tabs scroll instead of wrapping
+
+Patch — client/src/components/AgentDashboard.tsx
+
+-      <Tabs defaultValue="agents" className="space-y-4">
+-        <div className="flex items-center justify-between">
+-          <TabsList>
++      <Tabs defaultValue="agents" className="space-y-4">
++        <div className="flex items-center justify-between gap-3">
++          {/* prevent clipping on small widths */}
++          <TabsList className="max-w-full overflow-x-auto whitespace-nowrap no-scrollbar">
+             <TabsTrigger value="agents">Agents</TabsTrigger>
+             <TabsTrigger value="workflows">Workflows</TabsTrigger>
+             <TabsTrigger value="metrics">Metrics</TabsTrigger>
+           </TabsList>
+
+If the Agents panel still feels cramped in the Inspector, move it to the main workspace instead of a tab in the Inspector. Do that by rendering <AgentDashboard /> when your top navbar module is agents, and remove the Inspector “Agents” tab entirely. (If you want that change, say the word and I’ll give you the exact Dashboard.tsx diff—no guesswork.)
+
+⸻
+
+3) Make the “GPT-5 Assistant” buttons actually do things
+
+Right now they’re just visual. Let’s wire them to your WorkflowMindMap so they add properly configured tools and open the config dialog.
+
+Patch — inside WorkflowMindMap.tsx (you already have these states):
+
++  // quick helpers to make the buttons useful
++  const quickAddTool = (tool: Partial<Tool> & { config: NonNullable<Tool['config']> }) => {
++    const t: Tool = {
++      id: `quick-${Date.now()}`,
++      type: 'custom',
++      name: tool.name || 'Custom Tool',
++      icon: getActionIcon(tool.config.action),
++      description: getToolDescription(tool.config),
++      config: tool.config,
++    } as Tool;
++    setTools(prev => [...prev, t]);
++    // open config so the user can adjust
++    setConfiguredTool(t);
++    setToolConfig(t.config || { action: 'ai_prompt' });
++    setShowConfigDialog(true);
++  };
+
+Now wire the three buttons:
+
+-            <Button variant="outline" size="sm">
++            <Button
++              variant="outline"
++              size="sm"
++              onClick={() =>
++                quickAddTool({
++                  name: 'Web Search',
++                  config: { action: 'api_call', method: 'GET', endpoint: 'https://api.duckduckgo.com/?q={{query}}&format=json', outputVariable: 'search_results' }
++                })
++              }
++            >
+               <Globe className="h-3 w-3 mr-1" />
+               Web Search
+             </Button>
+-            <Button variant="outline" size="sm">
++            <Button
++              variant="outline"
++              size="sm"
++              onClick={() =>
++                quickAddTool({
++                  name: 'Generate Image',
++                  config: { action: 'ai_prompt', prompt: 'Create an image: {{prompt}}', outputVariable: 'image_url' }
++                })
++              }
++            >
+               <Image className="h-3 w-3 mr-1" />
+               Generate Image
+             </Button>
+-            <Button variant="outline" size="sm">
++            <Button
++              variant="outline"
++              size="sm"
++              onClick={() =>
++                quickAddTool({
++                  name: 'Knowledge Base',
++                  config: { action: 'file_operation', fileOperation: 'read', filePath: '/kb/{{topic}}.md', outputVariable: 'kb_text' }
++                })
++              }
++            >
+               <FileText className="h-3 w-3 mr-1" />
+               Knowledge Base
+             </Button>
+
+Result: clicking any of those adds a configured tool, opens the config dialog for edits, and the tool is immediately available to drag into a Step.
+
+⸻
+
+4) Top module bar (Mind Map / Calendar / Tasks / AI Activity…) is cramped
+
+Where that bar is rendered (likely in Dashboard.tsx), make it scrollable and non-shrinking so nothing is hidden.
+
+Patch — example wrapping container around those buttons:
+
+- <div className="flex items-center gap-2">
++ <div className="flex items-center gap-2 overflow-x-auto whitespace-nowrap no-scrollbar">
+    {/* each button should not shrink */}
+-   <Button className="...">Mind Map</Button>
++   <Button className="shrink-0 ...">Mind Map</Button>
++   <Button className="shrink-0 ...">Calendar</Button>
++   <Button className="shrink-0 ...">Tasks</Button>
++   <Button className="shrink-0 ...">AI Activity</Button>
+    ...
+  </div>
+
+If you want an even wider area (as your annotation suggests), reduce the Inspector width a bit more:
+
+- <div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[1fr,300px] overflow-hidden">
++ <div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[1fr,280px] overflow-hidden">
+
+
+⸻
+
+TL;DR
+	•	No more clipped tabs: headers scroll horizontally with hidden scrollbar.
+	•	Inspector header aligned + compact: lowered and doesn’t fight the main header.
+	•	Assistant buttons are functional: they actually add tools and open config.
+	•	Top module bar: scrolls and never hides items.
+
+If you want Agents in the main workspace (my recommendation), say the word and I’ll give you the exact Dashboard.tsx diff to render <AgentDashboard /> center-stage when “Agents” is selected, and remove the Agents tab from the Inspector entirely.
