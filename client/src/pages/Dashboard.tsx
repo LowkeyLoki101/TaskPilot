@@ -565,6 +565,11 @@ export default function Dashboard() {
                 <ComprehensiveActivityLogger />
               </div>
             )}
+            {currentModule === 'feature' && (
+              <div className="h-full p-4">
+                <FeatureRequestPanel />
+              </div>
+            )}
             {currentModule === 'diagnostics' && (
               <div className="h-full p-4">
                 <DiagnosticsPanel 
@@ -737,6 +742,16 @@ export default function Dashboard() {
                         <span>AI Activity</span>
                       </Button>
                       <Button
+                        variant={currentModule === 'feature' ? 'default' : 'ghost'}
+                        size="sm"
+                        onClick={() => setCurrentModule('feature')}
+                        className="h-7 px-2 shrink-0 text-xs"
+                        data-testid="module-feature"
+                      >
+                        <Sparkles className="h-3 w-3 mr-1" />
+                        <span>Feature</span>
+                      </Button>
+                      <Button
                         variant={currentModule === 'browser' ? 'default' : 'ghost'}
                         size="sm"
                         onClick={() => setCurrentModule('browser')}
@@ -893,6 +908,11 @@ export default function Dashboard() {
                 {currentModule === 'activity' && (
                   <div className="h-full p-4">
                     <ComprehensiveActivityLogger />
+                  </div>
+                )}
+                {currentModule === 'feature' && (
+                  <div className="h-full p-4">
+                    <FeatureRequestPanel />
                   </div>
                 )}
                 {currentModule === 'browser' && (
