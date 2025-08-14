@@ -89,9 +89,9 @@ Remember: You're not just an advisor - you're the builder. Create real, working 
     });
 
     const response = await openai.chat.completions.create({
-      model: "gpt-5",
+      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: messages,
-      max_completion_tokens: 500
+      max_tokens: 500
     });
 
     return response.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";

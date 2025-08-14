@@ -237,7 +237,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               role: 'assistant',
               content: aiResponseContent,
               metadata: {
-                model: 'gpt-5',
+                model: 'gpt-4o',
                 generatedAt: new Date().toISOString()
               }
             });
