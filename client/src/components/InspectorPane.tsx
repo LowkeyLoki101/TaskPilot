@@ -117,13 +117,9 @@ export function InspectorPane({
 
   return (
     <div className={`flex flex-col h-full bg-card border-l border-border overflow-hidden ${className}`} data-testid="inspector-pane">
-      <div className="p-4 border-b border-border">
-        <h3 className="font-semibold text-sm">AI Assistant</h3>
-        <p className="text-xs text-muted-foreground">Chat, tasks, features, and diagnostics</p>
-      </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <div className="px-3 pt-2">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+        <div className="px-3 pt-3 pb-2">
           <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="ai" className="text-xs">
               <Brain className="h-3 w-3 mr-1" />

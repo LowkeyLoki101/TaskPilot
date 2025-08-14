@@ -671,7 +671,7 @@ export default function Dashboard() {
               </div>
 
               {/* Center Section - Module Selector with Scroll */}
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 relative z-50">
                 {!workflowMode && (
                   <div className="flex items-center space-x-1">
                     <Button
@@ -691,7 +691,7 @@ export default function Dashboard() {
                     
                     <div 
                       id="module-selector"
-                      className="flex items-center border rounded-lg p-1 bg-muted/50 max-w-[220px] overflow-x-hidden scrollbar-hide"
+                      className="flex items-center border rounded-lg p-1 bg-background max-w-[220px] overflow-x-hidden scrollbar-hide"
                       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
                     >
                       <Button
