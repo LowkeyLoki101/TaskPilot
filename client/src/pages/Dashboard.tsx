@@ -640,7 +640,7 @@ export default function Dashboard() {
       />
       
       {/* Desktop Two-Pane Layout - Workspace + Inspector */}
-      <div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[1fr,400px] overflow-hidden">
+      <div className="h-[calc(100vh-4rem)] grid grid-cols-1 lg:grid-cols-[1fr,300px] overflow-hidden">
 
         {/* Center Pane - Canvas */}
         <div className="flex flex-col min-w-0 bg-background h-full overflow-hidden">
@@ -779,54 +779,17 @@ export default function Dashboard() {
                 )}
               </div>
 
-              {/* Right Section - Controls and Autonomy Toggle */}
-              <div className="flex items-center space-x-3">
-                {/* Autonomy Toggle */}
-                <div className="flex items-center space-x-2 border rounded-lg p-2 bg-muted/30">
-                  <label className="text-xs font-medium">Autonomy:</label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setAutonomyMode(autonomyMode === 'manual' ? 'semi' : autonomyMode === 'semi' ? 'full' : 'manual')}
-                    className={`h-6 px-2 text-xs ${getAutonomyColor()}`}
-                    data-testid="autonomy-toggle"
-                  >
-                    {autonomyMode === 'full' ? 'Full' : autonomyMode === 'semi' ? 'Semi' : 'Manual'}
-                  </Button>
-                </div>
-                
+              {/* Right Section - Essential Controls Only */}
+              <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setWorkflowMode(!workflowMode)}
-                  className="hidden lg:flex h-7"
+                  className="h-7"
                 >
                   <Workflow className="h-3 w-3 mr-1" />
                   {workflowMode ? "Tasks" : "Workflows"}
                 </Button>
-                
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={runMaintenanceCheck}
-                  className="hidden lg:flex h-7"
-                  disabled={autonomyMode === 'manual'}
-                  data-testid="run-maintenance"
-                >
-                  <Settings className="h-3 w-3 mr-1" />
-                  Maintenance
-                </Button>
-                
-                <Link to="/agents">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-7"
-                  >
-                    <Users className="h-3 w-3 mr-1" />
-                    AI Agents
-                  </Button>
-                </Link>
                 
                 <Button 
                   size="sm"
@@ -1015,6 +978,7 @@ export default function Dashboard() {
             aiActivityLog={aiActivityLog}
             lastMaintenanceRun={lastMaintenanceRun}
             onRunMaintenance={runMaintenanceCheck}
+            onAutonomyChange={setAutonomyMode}
             projectId={currentProjectId}
             className="hidden lg:flex h-full overflow-hidden"
           />

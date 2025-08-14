@@ -36,6 +36,7 @@ interface InspectorPaneProps {
   aiActivityLog?: Array<{id: string, action: string, timestamp: Date | string, type: 'task' | 'bug' | 'enhancement' | 'maintenance'}>;
   lastMaintenanceRun?: Date | null;
   onRunMaintenance?: () => void;
+  onAutonomyChange?: (mode: 'manual' | 'semi' | 'full') => void;
   projectId: string;
   className?: string;
 }
@@ -47,6 +48,7 @@ export function InspectorPane({
   aiActivityLog = [],
   lastMaintenanceRun,
   onRunMaintenance,
+  onAutonomyChange,
   projectId,
   className 
 }: InspectorPaneProps) {
@@ -147,7 +149,42 @@ export function InspectorPane({
         <div className="flex-1 overflow-hidden">
           <TabsContent value="ai" className="h-full mt-0">
             <div className="h-full flex flex-col">
-              {/* AI Chat Interface - Takes 65% of space */}
+              {/* Autonomy Controls */}
+              <div className="p-3 border-b border-border bg-muted/30">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs font-medium">Autonomy Mode</div>
+                    <div className={`w-2 h-2 rounded-full ${autonomyMode === 'full' ? 'bg-green-400 animate-pulse' : autonomyMode === 'semi' ? 'bg-yellow-400' : 'bg-gray-400'}`}></div>
+                  </div>
+                  <div className="flex gap-1">
+                    {(['manual', 'semi', 'full'] as const).map((mode) => (
+                      <Button
+                        key={mode}
+                        variant={autonomyMode === mode ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => onAutonomyChange?.(mode)}
+                        className="flex-1 h-6 text-xs"
+                      >
+                        {mode === 'full' ? 'Full' : mode === 'semi' ? 'Semi' : 'Manual'}
+                      </Button>
+                    ))}
+                  </div>
+                  {onRunMaintenance && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onRunMaintenance}
+                      className="w-full h-6 text-xs"
+                      disabled={autonomyMode === 'manual'}
+                    >
+                      <Settings className="h-3 w-3 mr-1" />
+                      Run Maintenance
+                    </Button>
+                  )}
+                </div>
+              </div>
+              
+              {/* AI Chat Interface - Takes 60% of space */}
               <div className="flex-[2] min-h-0">
                 <ChatPane 
                   projectId={projectId}
@@ -155,7 +192,7 @@ export function InspectorPane({
                 />
               </div>
               
-              {/* AI Activity Feed - Takes 35% of space */}
+              {/* AI Activity Feed - Takes 30% of space */}
               <div className="flex-1 border-t border-border bg-muted/20 flex flex-col min-h-0">
                 <div className="p-3 space-y-2 flex flex-col h-full">
                   <div className="flex items-center gap-1 text-xs font-medium">

@@ -1,9 +1,10 @@
 import OpenAI from "openai";
+import { aiToolExecutor, ToolExecutionResult } from "./aiToolExecutor";
 
-// Using GPT-5 as specified in user preferences
+// Using GPT-4o - the newest available model
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-export async function generateAIResponse(userMessage: string, context?: any[]): Promise<string> {
+export async function generateAIResponse(userMessage: string, context?: any): Promise<string> {
   try {
     const messages: any[] = [
       {
@@ -73,13 +74,14 @@ Remember: You're not just an advisor - you're the builder. Create real, working 
     ];
 
     // Add context if provided (previous messages)
-    if (context && context.length > 0) {
+    const recentMessages = context?.recentMessages || context;
+    if (recentMessages && Array.isArray(recentMessages) && recentMessages.length > 0) {
       // Add last 10 messages for context
-      const recentMessages = context.slice(-10).map(msg => ({
+      const contextMessages = recentMessages.slice(-10).map(msg => ({
         role: msg.role === 'user' ? 'user' : 'assistant',
         content: msg.content
       }));
-      messages.push(...recentMessages);
+      messages.push(...contextMessages);
     }
 
     // Add the current user message
@@ -94,7 +96,24 @@ Remember: You're not just an advisor - you're the builder. Create real, working 
       max_tokens: 500
     });
 
-    return response.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
+    const aiResponse = response.choices[0]?.message?.content || "I'm sorry, I couldn't generate a response.";
+    
+    // Check if the user wants to create something and execute tools
+    const executionResult = await aiToolExecutor.executeCommand(userMessage, context);
+    
+    if (executionResult.success) {
+      // Combine AI response with tool execution results
+      const actionSummary = executionResult.actions
+        ?.map(action => `• ${action.description}`)
+        .join('\n') || '';
+      
+      return `${aiResponse}\n\n**Actions Taken:**\n${actionSummary}\n\n${executionResult.message}`;
+    } else if (userMessage.toLowerCase().includes('create') || userMessage.toLowerCase().includes('make') || userMessage.toLowerCase().includes('build')) {
+      // If user wanted to create something but we couldn't execute it, be helpful
+      return `${aiResponse}\n\n*Note: I'd love to actually create that for you! Try being more specific, like "create task called X" or "make a tool for Y"*`;
+    }
+    
+    return aiResponse;
   } catch (error) {
     console.error("Error generating AI response:", error);
     

@@ -227,8 +227,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Get recent messages for context
             const recentMessages = await storage.getChatMessagesByProject(req.params.projectId);
             
-            // Generate AI response
-            const aiResponseContent = await generateAIResponse(req.body.content, recentMessages);
+            // Generate AI response with project context
+            const contextWithProject = {
+              projectId: req.params.projectId,
+              recentMessages: recentMessages
+            };
+            const aiResponseContent = await generateAIResponse(req.body.content, contextWithProject);
             
             // Create AI message
             const aiMessage = await storage.createChatMessage({
