@@ -149,18 +149,18 @@ export function InspectorPane({
         </div>
 
         <div className="flex-1 overflow-hidden">
-          <TabsContent value="ai" className="h-full mt-0 flex flex-col">
-            <div className="flex-1 flex flex-col overflow-hidden">
+          <TabsContent value="ai" className="h-full mt-0">
+            <div className="h-full flex flex-col">
               {/* AI Chat Interface - Takes 65% of space */}
-              <div className="flex-[2] overflow-hidden flex flex-col">
+              <div className="flex-[2] min-h-0">
                 <ChatPane 
                   projectId={projectId}
-                  className="h-full border-none flex flex-col"
+                  className="h-full border-none"
                 />
               </div>
               
               {/* AI Activity Feed - Takes 35% of space */}
-              <div className="flex-1 border-t border-border bg-muted/20 flex flex-col overflow-hidden">
+              <div className="flex-1 border-t border-border bg-muted/20 flex flex-col min-h-0">
                 <div className="p-3 space-y-2 flex flex-col h-full">
                   <div className="flex items-center gap-1 text-xs font-medium">
                     <Activity className="h-3 w-3 text-primary" />

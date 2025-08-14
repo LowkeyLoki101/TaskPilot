@@ -111,9 +111,9 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
   }, [messages]);
 
   return (
-    <div className={`flex flex-col bg-card h-full ${className}`} data-testid="chat-pane">
+    <div className={`flex flex-col bg-card h-full relative ${className}`} data-testid="chat-pane">
       {/* Header */}
-      <div className="p-2 border-b border-border shrink-0">
+      <div className="p-2 border-b border-border">
         <div className="flex items-center gap-2">
           <div className="p-1 rounded bg-gradient-to-r from-primary to-secondary">
             <Bot className="h-3 w-3 text-white" />
@@ -127,9 +127,9 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
         </div>
       </div>
 
-      {/* Messages - Scrollable area */}
-      <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full p-2" ref={scrollAreaRef}>
+      {/* Messages - Scrollable area with padding for input */}
+      <div className="flex-1 overflow-y-auto pb-20" ref={scrollAreaRef}>
+        <div className="p-2">
           <div className="space-y-2 pr-3">
           {messages.length === 0 && (
             <div className="text-center py-4 text-muted-foreground">
@@ -198,11 +198,11 @@ export function ChatPane({ projectId, className }: ChatPaneProps) {
             </div>
           )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
-      {/* Input Area - Fixed at bottom */}
-      <div className="p-2 border-t border-border bg-muted/20 shrink-0">
+      {/* Input Area - Absolutely positioned at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 p-2 border-t border-border bg-card">
         {/* Attached Files Display */}
         {attachedFiles.length > 0 && (
           <div className="mb-2 flex flex-wrap gap-1">
