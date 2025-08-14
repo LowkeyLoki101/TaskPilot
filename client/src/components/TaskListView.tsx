@@ -28,14 +28,21 @@ export function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListVie
 
   const toggleTaskComplete = async (taskId: string, completed: boolean) => {
     try {
+      console.log('Toggling task:', taskId, 'from', completed, 'to', !completed);
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: !completed, status: !completed ? 'completed' : 'todo' })
+        body: JSON.stringify({ 
+          completed: !completed, 
+          status: !completed ? 'completed' : 'todo' 
+        })
       });
       
       if (response.ok) {
+        console.log('Task update successful, refetching...');
         await refetch();
+      } else {
+        console.error('Task update failed:', response.status, response.statusText);
       }
     } catch (error) {
       console.error('Error updating task:', error);
@@ -171,15 +178,17 @@ export function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListVie
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
+                          console.log('Checkbox clicked for task:', task.id, 'current completed:', task.completed);
                           toggleTaskComplete(task.id, task.completed);
                         }}
-                        className="w-6 h-6 border-2 border-primary rounded flex-shrink-0 hover:bg-primary/10 transition-colors flex items-center justify-center bg-background"
+                        className="w-8 h-8 border-2 border-primary rounded-md flex-shrink-0 hover:bg-primary/20 transition-all duration-200 flex items-center justify-center bg-background cursor-pointer"
+                        style={{ minWidth: '32px', minHeight: '32px' }}
                         data-testid={`task-checkbox-${task.id}`}
                       >
                         {task.completed ? (
-                          <CheckCircle className="w-4 h-4 text-primary fill-current" />
+                          <CheckCircle className="w-5 h-5 text-primary" />
                         ) : (
-                          <div className="w-3 h-3 border border-muted-foreground rounded-sm"></div>
+                          <div className="w-4 h-4 border-2 border-muted-foreground rounded-sm bg-background"></div>
                         )}
                       </button>
                       <div className="min-w-0 flex-1">
