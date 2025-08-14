@@ -643,412 +643,287 @@ export default function Dashboard() {
     );
   }
 
-  // Desktop Layout - Three Pane System
+  // Desktop Layout - Clean 2-Column Grid System
   return (
-    <div className="h-screen bg-background text-foreground font-inter">
-      <Header 
-        onVoiceToggle={handleVoiceToggle}
-        isVoiceActive={isListening}
-      />
-      
-      {/* Desktop Two-Pane Layout - Workspace + Inspector */}
-      <div className="h-[calc(100vh-3.5rem)] grid grid-cols-1 lg:grid-cols-[1fr,280px] overflow-hidden">
+    <div className="h-screen w-full bg-background">
+      {/* APP GRID: header row + content row */}
+      <div className="grid h-full grid-rows-[auto,auto,1fr] grid-cols-[1fr,320px] lg:grid-cols-[1fr,360px] xl:grid-cols-[1fr,380px] overflow-hidden">
 
-        {/* Center Pane - Canvas */}
-        <div className="flex flex-col min-w-0 bg-background h-full overflow-hidden">
-          {/* Autonomous AI Workstation Toolbar - Compact */}
-          <div className="bg-card border-b border-border p-2">
-            <div className="flex justify-between items-center">
-              {/* Left Section - Title and AI Status */}
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <div className="h-8 w-8 bg-gradient-to-r from-primary to-secondary rounded flex items-center justify-center">
-                    <Bot className="h-5 w-5 text-white" />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2 text-sm">
-                    <div className={`w-2 h-2 rounded-full ${autonomyMode === 'full' ? 'bg-green-400 animate-pulse' : autonomyMode === 'semi' ? 'bg-yellow-400' : 'bg-gray-400'}`}></div>
-                    <span className={`text-xs ${getAutonomyColor()}`}>{getAutonomyLabel()}</span>
-                  </div>
-                  <Badge variant="outline" className="text-xs">
-                    GPT-4o Active
-                  </Badge>
-                </div>
-              </div>
+        {/* ======= TOP HEADER (spans both columns) ======= */}
+        <div className="row-[1] col-span-2 sticky top-0 z-40">
+          <Header 
+            onVoiceToggle={handleVoiceToggle}
+            isVoiceActive={isListening}
+          />
+        </div>
 
-              {/* Center Section - Module Selector with Scroll */}
-              <div className="flex items-center space-x-1 relative z-50">
-                {!workflowMode && (
-                  <div className="flex items-center space-x-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const container = document.getElementById('module-selector');
-                        if (container) {
-                          container.scrollBy({ left: -200, behavior: 'smooth' });
-                        }
-                      }}
-                      className="h-7 w-7 p-0"
-                      data-testid="module-scroll-left"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    
-                    <div 
-                      id="module-selector"
-                      className="flex items-center border rounded-lg p-1 bg-background max-w-[500px] overflow-x-auto no-scrollbar whitespace-nowrap"
-                    >
-                      <Button
-                        variant={currentModule === 'mindmap' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setCurrentModule('mindmap')}
-                        className="h-7 px-2 flex-shrink-0 text-xs"
-                        data-testid="module-mindmap"
-                      >
-                        <Brain className="h-3 w-3 mr-1" />
-                        <span>Mind Map</span>
-                      </Button>
-                      <Button
-                        variant={currentModule === 'calendar' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setCurrentModule('calendar')}
-                        className="h-7 px-2 flex-shrink-0 text-xs"
-                        data-testid="module-calendar"
-                      >
-                        <Calendar className="h-3 w-3 mr-1" />
-                        <span>Calendar</span>
-                      </Button>
-                      <Button
-                        variant={currentModule === 'tasks' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setCurrentModule('tasks')}
-                        className="h-7 px-2 flex-shrink-0 text-xs"
-                        data-testid="module-tasks"
-                      >
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        <span>Tasks</span>
-                      </Button>
-                      <Button
-                        variant={currentModule === 'activity' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setCurrentModule('activity')}
-                        className="h-7 px-2 flex-shrink-0 text-xs"
-                        data-testid="module-activity"
-                      >
-                        <Bot className="h-3 w-3 mr-1" />
-                        <span>AI Activity</span>
-                      </Button>
-                      <Button
-                        variant={currentModule === 'feature' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setCurrentModule('feature')}
-                        className="h-7 px-2 flex-shrink-0 text-xs"
-                        data-testid="module-feature"
-                      >
-                        <Sparkles className="h-3 w-3 mr-1" />
-                        <span>Feature</span>
-                      </Button>
-                      <Button
-                        variant={currentModule === 'browser' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setCurrentModule('browser')}
-                        className="h-7 px-2 flex-shrink-0 text-xs"
-                        data-testid="module-browser"
-                      >
-                        <Globe className="h-3 w-3 mr-1" />
-                        <span>Browser</span>
-                      </Button>
-                      <Button
-                        variant={currentModule === 'diagnostics' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setCurrentModule('diagnostics')}
-                        className="h-7 px-2 flex-shrink-0 text-xs"
-                        data-testid="module-diagnostics"
-                      >
-                        <BarChart3 className="h-3 w-3 mr-1" />
-                        <span>Debug</span>
-                      </Button>
-                      <Button
-                        variant={currentModule === 'agents' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setCurrentModule('agents')}
-                        className="h-7 px-2 flex-shrink-0 text-xs"
-                        data-testid="module-agents"
-                      >
-                        <Bot className="h-3 w-3 mr-1" />
-                        <span>Agents</span>
-                      </Button>
-                      <Button
-                        variant={currentModule === 'tools' ? 'default' : 'ghost'}
-                        size="sm"
-                        onClick={() => setCurrentModule('tools')}
-                        className="h-7 px-2 flex-shrink-0 text-xs"
-                        data-testid="module-tools"
-                      >
-                        <Wrench className="h-3 w-3 mr-1" />
-                        <span>Tools</span>
-                      </Button>
-                    </div>
-                    
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const container = document.getElementById('module-selector');
-                        if (container) {
-                          container.scrollBy({ left: 200, behavior: 'smooth' });
-                        }
-                      }}
-                      className="h-7 w-7 p-0"
-                      data-testid="module-scroll-right"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Section - Essential Controls Only */}
-              <div className="flex items-center space-x-2">
+        {/* ======= MODULE TOOLBAR (spans both columns) ======= */}
+        <div className="row-[2] col-span-2 sticky top-14 z-30 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75">
+          <div className="h-12 flex items-center gap-2 px-4 overflow-x-auto scrollbar-none">
+            {/* Module selector buttons */}
+            {!workflowMode && (
+              <div className="flex items-center space-x-1">
                 <Button
-                  variant="outline"
+                  variant={currentModule === 'mindmap' ? 'default' : 'ghost'}
                   size="sm"
-                  onClick={() => setWorkflowMode(!workflowMode)}
-                  className="h-7"
+                  onClick={() => setCurrentModule('mindmap')}
+                  className="h-8 px-3 flex-shrink-0 text-xs"
+                  data-testid="module-mindmap"
                 >
-                  <Workflow className="h-3 w-3 mr-1" />
-                  {workflowMode ? "Tasks" : "Workflows"}
+                  <Brain className="h-3 w-3 mr-1" />
+                  <span>Mind Map</span>
                 </Button>
-                
-                <Button 
+                <Button
+                  variant={currentModule === 'calendar' ? 'default' : 'ghost'}
                   size="sm"
-                  className="bg-primary hover:bg-primary/90 h-7"
-                  onClick={() => workflowMode ? loadSampleWorkflow() : setIsTaskCreateModalOpen(true)}
-                  data-testid="button-add-task"
+                  onClick={() => setCurrentModule('calendar')}
+                  className="h-8 px-3 flex-shrink-0 text-xs"
+                  data-testid="module-calendar"
                 >
-                  {workflowMode ? "Create Workflow" : "Add Task"}
+                  <Calendar className="h-3 w-3 mr-1" />
+                  <span>Calendar</span>
+                </Button>
+                <Button
+                  variant={currentModule === 'tasks' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setCurrentModule('tasks')}
+                  className="h-8 px-3 flex-shrink-0 text-xs"
+                  data-testid="module-tasks"
+                >
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  <span>Tasks</span>
+                </Button>
+                <Button
+                  variant={currentModule === 'activity' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setCurrentModule('activity')}
+                  className="h-8 px-3 flex-shrink-0 text-xs"
+                  data-testid="module-activity"
+                >
+                  <Bot className="h-3 w-3 mr-1" />
+                  <span>AI Activity</span>
+                </Button>
+                <Button
+                  variant={currentModule === 'feature' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setCurrentModule('feature')}
+                  className="h-8 px-3 flex-shrink-0 text-xs"
+                  data-testid="module-feature"
+                >
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  <span>Feature</span>
+                </Button>
+                <Button
+                  variant={currentModule === 'browser' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setCurrentModule('browser')}
+                  className="h-8 px-3 flex-shrink-0 text-xs"
+                  data-testid="module-browser"
+                >
+                  <Globe className="h-3 w-3 mr-1" />
+                  <span>Browser</span>
+                </Button>
+                <Button
+                  variant={currentModule === 'diagnostics' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setCurrentModule('diagnostics')}
+                  className="h-8 px-3 flex-shrink-0 text-xs"
+                  data-testid="module-diagnostics"
+                >
+                  <BarChart3 className="h-3 w-3 mr-1" />
+                  <span>Debug</span>
+                </Button>
+                <Button
+                  variant={currentModule === 'agents' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setCurrentModule('agents')}
+                  className="h-8 px-3 flex-shrink-0 text-xs"
+                  data-testid="module-agents"
+                >
+                  <Bot className="h-3 w-3 mr-1" />
+                  <span>Agents</span>
+                </Button>
+                <Button
+                  variant={currentModule === 'tools' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setCurrentModule('tools')}
+                  className="h-8 px-3 flex-shrink-0 text-xs"
+                  data-testid="module-tools"
+                >
+                  <Wrench className="h-3 w-3 mr-1" />
+                  <span>Tools</span>
                 </Button>
               </div>
-            </div>
-          </div>
-
-          {/* Canvas Content - Module Container */}
-          <div className="flex-1 relative overflow-auto">
-            {workflowMode ? (
-              currentWorkflow ? (
-                <TraceCanvas
-                  flow={currentWorkflow}
-                  selectedNodeId={selectedNodeId || undefined}
-                  onSelectNode={selectNode}
-                  className="h-full"
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center bg-gradient-to-br from-background to-muted/20">
-                  <div className="text-center max-w-md mx-auto p-8">
-                    <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-cyan-600 bg-clip-text text-transparent">
-                      <Workflow className="h-16 w-16 mx-auto mb-4" />
-                    </div>
-                    <h3 className="text-2xl font-bold mb-2 text-foreground">Workflow Composer</h3>
-                    <p className="text-muted-foreground mb-6">
-                      Speak or type a workflow to see it come to life as an interactive graph
-                    </p>
-                    <div className="space-y-3">
-                      <Button 
-                        onClick={() => loadSampleWorkflow()}
-                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                        disabled={isGenerating}
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Clock className="h-4 w-4 mr-2 animate-spin" />
-                            Generating...
-                          </>
-                        ) : (
-                          <>
-                            <Workflow className="h-4 w-4 mr-2" />
-                            Load Sample Workflow
-                          </>
-                        )}
-                      </Button>
-                      <Button 
-                        onClick={() => setIsVoiceModalOpen(true)}
-                        variant="outline"
-                        className="w-full"
-                        disabled={isGenerating}
-                      >
-                        <Mic className="h-4 w-4 mr-2" />
-                        Create Custom Workflow
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              )
-            ) : (
-              <>
-                {currentModule === 'mindmap' && (
-                  <WorkflowMindMap 
-                    projectId={currentProjectId}
-                  />
-                )}
-                {currentModule === 'tasks' && (
-                  <TaskListView 
-                    projectId={currentProjectId}
-                    onTaskSelect={handleTaskSelect}
-                  />
-                )}
-                {currentModule === 'calendar' && (
-                  <CalendarView 
-                    projectId={currentProjectId}
-                    onTaskSelect={handleTaskSelect}
-                  />
-                )}
-                {currentModule === 'activity' && (
-                  <div className="h-full p-4">
-                    <ComprehensiveActivityLogger />
-                  </div>
-                )}
-                {currentModule === 'feature' && (
-                  <div className="h-full p-4">
-                    <FeatureRequestPanel />
-                  </div>
-                )}
-                {currentModule === 'browser' && (
-                  <div className="h-full flex flex-col bg-background">
-                    {/* Browser Header */}
-                    <div className="p-4 border-b border-border bg-background/95">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <Globe className="h-5 w-5 text-primary" />
-                          <h3 className="font-semibold">AI Web Browser</h3>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className="text-xs">Beta</Badge>
-                          <Button size="sm" variant="outline">
-                            <Youtube className="h-3 w-3 mr-1" />
-                            YouTube
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Search className="h-3 w-3 mr-1" />
-                            Search
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Address Bar */}
-                    <div className="p-3 border-b border-border bg-muted/30">
-                      <div className="flex items-center space-x-2">
-                        <div className="flex-1 flex items-center bg-background border rounded-lg px-3 py-2">
-                          <Globe className="h-4 w-4 text-muted-foreground mr-2" />
-                          <input 
-                            type="text" 
-                            placeholder="Enter URL or search query..."
-                            className="flex-1 bg-transparent outline-none text-sm"
-                            defaultValue="https://replit.com"
-                          />
-                        </div>
-                        <Button size="sm">Go</Button>
-                      </div>
-                    </div>
-                    
-                    {/* Browser Content */}
-                    <div className="flex-1 relative bg-white">
-                      <iframe 
-                        src="https://replit.com"
-                        className="w-full h-full border-0"
-                        title="AI Browser"
-                        sandbox="allow-same-origin allow-scripts allow-forms"
-                      />
-                      {/* AI Overlay Controls */}
-                      <div className="absolute top-4 right-4 space-y-2">
-                        <Button size="sm" variant="secondary" className="bg-background/80 backdrop-blur">
-                          <Brain className="h-3 w-3 mr-1" />
-                          AI Annotate
-                        </Button>
-                        <Button size="sm" variant="secondary" className="bg-background/80 backdrop-blur">
-                          <Download className="h-3 w-3 mr-1" />
-                          Extract Data
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {currentModule === 'diagnostics' && (
-                  <div className="h-full p-4">
-                    <DiagnosticsPanel 
-                      aiActivityLog={aiActivityLog}
-                      lastMaintenanceRun={lastMaintenanceRun}
-                      autonomyMode={autonomyMode}
-                      onRunMaintenance={runMaintenanceCheck}
-                    />
-                  </div>
-                )}
-                {currentModule === 'agents' && (
-                  <div className="h-full p-6 overflow-y-auto">
-                    <AgentDashboard />
-                  </div>
-                )}
-                {currentModule === 'tools' && (
-                  <div className="h-full">
-                    <WorkstationTools projectId={currentProjectId} />
-                  </div>
-                )}
-              </>
             )}
+            
+            {/* Right side controls */}
+            <div className="ml-auto flex items-center space-x-2">
+              <div className="flex items-center space-x-2 text-sm">
+                <div className={`w-2 h-2 rounded-full ${autonomyMode === 'full' ? 'bg-green-400 animate-pulse' : autonomyMode === 'semi' ? 'bg-yellow-400' : 'bg-gray-400'}`}></div>
+                <span className={`text-xs ${getAutonomyColor()}`}>{getAutonomyLabel()}</span>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setWorkflowMode(!workflowMode)}
+                className="h-8"
+              >
+                <Workflow className="h-3 w-3 mr-1" />
+                {workflowMode ? "Tasks" : "Workflows"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsTaskCreateModalOpen(true)}
+                className="h-8"
+                data-testid="button-add-task"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add Task
+              </Button>
+            </div>
           </div>
         </div>
 
-        {/* Right Pane - Inspector (hidden on mobile and md, visible on lg+) */}
-        {workflowMode && currentWorkflow ? (
-          <WorkflowInspector
-            flow={currentWorkflow}
-            selectedNode={currentWorkflow.nodes.find(n => n.id === selectedNodeId)}
-            runtime={runtime || undefined}
-            onRunFlow={(mode) => executeWorkflow({ workflow: currentWorkflow, mode })}
-            onRunStep={(stepId, mode) => executeStep({ workflow: currentWorkflow, stepId, mode })}
-            onExportFlow={exportWorkflow}
-            className="hidden lg:flex"
-          />
-        ) : (
-          <InspectorPane 
-            selectedTaskId={selectedTaskId}
-            currentModule={currentModule as any}
-            autonomyMode={autonomyMode}
-            aiActivityLog={aiActivityLog}
-            lastMaintenanceRun={lastMaintenanceRun}
-            onRunMaintenance={runMaintenanceCheck}
-            onAutonomyChange={setAutonomyMode}
-            projectId={currentProjectId}
-            className="hidden lg:flex h-full overflow-hidden"
-          />
-        )}
+        {/* ======= MAIN WORKSPACE (left) ======= */}
+        <main className="row-[3] col-[1] min-w-0 overflow-hidden">
+          <div className="h-full flex flex-col">
+            {/* page title + local toolbar if needed */}
+            <div className="h-12 shrink-0 flex items-center px-4 border-b border-border bg-background sticky top-24 z-20">
+              <div className="text-sm font-semibold">
+                {workflowMode ? 'Workflow Orchestrator' : 
+                 currentModule === 'mindmap' ? 'Project Mind Map' :
+                 currentModule === 'calendar' ? 'Calendar View' :
+                 currentModule === 'tasks' ? 'Task Management' :
+                 currentModule === 'activity' ? 'AI Activity Log' :
+                 currentModule === 'agents' ? 'Agent Dashboard' :
+                 currentModule === 'tools' ? 'Workstation Tools' :
+                 currentModule === 'feature' ? 'Feature Requests' :
+                 currentModule === 'diagnostics' ? 'System Diagnostics' :
+                 currentModule === 'browser' ? 'AI Browser' :
+                 'Workspace'}
+              </div>
+            </div>
+
+            {/* canvas/content */}
+            <div className="flex-1 min-h-0 overflow-auto">
+              {workflowMode ? (
+                <div className="h-full p-4">
+                  <WorkflowMindMap projectId={currentProjectId} />
+                </div>
+              ) : (
+                <>
+                  {currentModule === 'mindmap' && (
+                    <div className="h-full p-4">
+                      <MindMap
+                        projectId={currentProjectId}
+                        onTaskSelect={setSelectedTaskId}
+                      />
+                    </div>
+                  )}
+                  {currentModule === 'calendar' && (
+                    <div className="h-full">
+                      <CalendarView 
+                        projectId={currentProjectId}
+                        onTaskSelect={setSelectedTaskId}
+                      />
+                    </div>
+                  )}
+                  {currentModule === 'tasks' && (
+                    <div className="h-full">
+                      <TaskListView 
+                        projectId={currentProjectId}
+                        onTaskSelect={setSelectedTaskId}
+                      />
+                    </div>
+                  )}
+                  {currentModule === 'agents' && (
+                    <div className="h-full p-4">
+                      <AgentDashboard />
+                    </div>
+                  )}
+                  {currentModule === 'activity' && (
+                    <div className="h-full p-4">
+                      <ComprehensiveActivityLogger />
+                    </div>
+                  )}
+                  {currentModule === 'feature' && (
+                    <div className="h-full p-4">
+                      <FeatureRequestPanel />
+                    </div>
+                  )}
+                  {currentModule === 'diagnostics' && (
+                    <div className="h-full p-4">
+                      <DiagnosticsPanel 
+                        aiActivityLog={aiActivityLog}
+                        lastMaintenanceRun={lastMaintenanceRun}
+                        autonomyMode={autonomyMode}
+                        onRunMaintenance={runMaintenanceCheck}
+                      />
+                    </div>
+                  )}
+                  {currentModule === 'browser' && (
+                    <div className="h-full">
+                      <AIBrowser />
+                    </div>
+                  )}
+                  {currentModule === 'transcription' && (
+                    <div className="h-full p-4">
+                      <VoiceTranscription />
+                    </div>
+                  )}
+                  {currentModule === 'tools' && (
+                    <div className="h-full p-4">
+                      <WorkstationTools projectId={currentProjectId} />
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </main>
+
+        {/* ======= INSPECTOR (right) ======= */}
+        <aside
+          className="row-[3] col-[2] min-w-[280px] max-w-[420px] border-l border-border bg-card
+                     flex flex-col overflow-hidden"
+        >
+          {/* inspector header, same height as left subheader */}
+          <div className="h-12 shrink-0 flex items-center px-3 border-b border-border bg-card sticky top-24 z-20">
+            <div className="w-full overflow-x-auto">
+              <div className="text-sm font-semibold">AI Inspector</div>
+            </div>
+          </div>
+
+          {/* inspector body */}
+          <div className="flex-1 min-h-0 overflow-auto">
+            <InspectorPane
+              projectId={currentProjectId}
+              selectedTaskId={selectedTaskId}
+              currentModule={currentModule as any}
+              autonomyMode={autonomyMode}
+              aiActivityLog={aiActivityLog}
+              lastMaintenanceRun={lastMaintenanceRun}
+              onRunMaintenance={runMaintenanceCheck}
+              className="h-full"
+            />
+          </div>
+        </aside>
       </div>
 
-      {/* Command Palette */}
-      <CommandPalette
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        onCommand={handleCommand}
-      />
-
-      {/* Task Detail Panel (for selected tasks on desktop) */}
-      {selectedTaskId && !isMobile && (
-        <TaskDetailPanel
-          taskId={selectedTaskId}
-          onClose={handleCloseTaskPanel}
-        />
-      )}
-
-      {/* Task Create Modal */}
+      {/* Modals and overlays */}
       <TaskCreateModal
         isOpen={isTaskCreateModalOpen}
         onClose={() => setIsTaskCreateModalOpen(false)}
         projectId={currentProjectId}
       />
 
-      {/* Voice Modal */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        onCommand={handleCommand}
+      />
+
       {isVoiceModalOpen && (
         <VoiceModal
           isListening={isListening}
