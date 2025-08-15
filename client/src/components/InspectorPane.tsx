@@ -282,7 +282,8 @@ export function InspectorPane({
               <DiagnosticsPanel 
                 aiActivityLog={aiActivityLog.map(log => ({
                   ...log,
-                  timestamp: typeof log.timestamp === 'string' ? new Date(log.timestamp) : log.timestamp
+                  timestamp: typeof log.timestamp === 'string' ? new Date(log.timestamp) : log.timestamp,
+                  type: log.type === 'ai_response' || log.type === 'system' ? 'maintenance' : log.type
                 }))}
                 lastMaintenanceRun={lastMaintenanceRun}
                 autonomyMode={autonomyMode}

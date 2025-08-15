@@ -61,9 +61,9 @@ export class AIToolExecutor {
         title: taskTitle,
         description: taskDescription,
         projectId: context?.projectId || 'default-project',
-        status: 'pending',
+        status: 'todo',
         priority: 'medium',
-        assigneeId: 'ai-assistant',
+        assigneeId: null,  // Don't assign to non-existent user
         // Set position for mind map
         position: { x: Math.random() * 400, y: Math.random() * 300 }
       });
