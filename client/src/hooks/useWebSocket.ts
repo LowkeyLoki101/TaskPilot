@@ -118,6 +118,7 @@ export function useWebSocket(projectId: string) {
   };
 
   return {
+    isConnected: wsRef.current?.readyState === WebSocket.OPEN,
     sendMessage: (message: any) => {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(JSON.stringify(message));

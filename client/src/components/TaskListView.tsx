@@ -20,10 +20,10 @@ interface Task {
 interface TaskListViewProps {
   projectId: string;
   onTaskSelect: (taskId: string) => void;
-  onAddTask?: () => void;
+  onAddTask: () => void;
 }
 
-export function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListViewProps) {
+export default function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListViewProps) {
   const { data: tasks = [], isLoading, refetch } = useQuery<Task[]>({
     queryKey: [`/api/projects/${projectId}/tasks`],
   });
@@ -97,7 +97,7 @@ export function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListVie
   const inProgressTasks = mainTasks.filter(task => task.status === 'in_progress');
   const completedTasks = mainTasks.filter(task => task.status === 'completed');
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: string): "destructive" | "default" | "secondary" | "outline" => {
     switch (priority) {
       case 'high': return 'destructive';
       case 'medium': return 'default';
@@ -127,7 +127,7 @@ export function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListVie
     onTaskSelect: (id: string) => void,
     toggleTaskComplete: (id: string, status: string) => void,
     deleteTask: (id: string) => void,
-    getPriorityColor: (priority: string) => string,
+    getPriorityColor: (priority: string) => "destructive" | "default" | "secondary" | "outline",
     formatDate: (date: string) => string
   }) => {
     const [expanded, setExpanded] = useState(true);
@@ -294,7 +294,7 @@ export function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListVie
           </div>
           <div className="flex items-center space-x-2">
             <Badge variant="outline" className="text-xs">
-              {pendingTasks.length} pending
+              {todoTasks.length + inProgressTasks.length} pending
             </Badge>
             <Button 
               size="sm" 
@@ -352,135 +352,7 @@ export function TaskListView({ projectId, onTaskSelect, onAddTask }: TaskListVie
                 Completed ({completedTasks.length})
               </h4>
               {completedTasks.map((task) => (
-                <div 
-                  key={task.id}
-                  className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                  onClick={() => onTaskSelect(task.id)}
-                  data-testid={`task-item-${task.id}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3 flex-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          console.log('Checkbox clicked for task:', task.id, 'current status:', task.status);
-                          toggleTaskComplete(task.id, task.status);
-                        }}
-                        className="w-8 h-8 border-2 border-primary rounded-md flex-shrink-0 hover:bg-primary/20 transition-all duration-200 flex items-center justify-center bg-background cursor-pointer"
-                        style={{ minWidth: '32px', minHeight: '32px' }}
-                        data-testid={`task-checkbox-${task.id}`}
-                      >
-                        {task.status === 'completed' ? (
-                          <CheckCircle className="w-5 h-5 text-primary" />
-                        ) : (
-                          <div className="w-4 h-4 border-2 border-muted-foreground rounded-sm bg-background"></div>
-                        )}
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-medium truncate">{task.title}</h4>
-                        {task.description && (
-                          <p className="text-xs text-muted-foreground truncate">{task.description}</p>
-                        )}
-                        <div className="flex items-center gap-3 mt-1">
-                          {task.dueDate && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <CalendarIcon className="h-3 w-3" />
-                              {formatDate(task.dueDate)}
-                            </div>
-                          )}
-                          {task.assignee && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <User className="h-3 w-3" />
-                              {task.assignee}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                        {task.priority}
-                      </Badge>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteTask(task.id);
-                        }}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                        data-testid={`task-delete-${task.id}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Completed Tasks */}
-          {completedTasks.length > 0 && (
-            <div className="space-y-3">
-              <h4 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                Completed ({completedTasks.length})
-              </h4>
-              {completedTasks.map((task) => (
-                <div 
-                  key={task.id}
-                  className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors opacity-75"
-                  onClick={() => onTaskSelect(task.id)}
-                  data-testid={`task-item-${task.id}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3 flex-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleTaskComplete(task.id, task.completed);
-                        }}
-                        className="w-6 h-6 border-2 border-primary rounded flex-shrink-0 hover:bg-primary/10 transition-colors flex items-center justify-center bg-primary"
-                        data-testid={`task-checkbox-${task.id}`}
-                      >
-                        <CheckCircle className="w-4 h-4 text-primary-foreground fill-current" />
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-sm font-medium truncate line-through text-muted-foreground">{task.title}</h4>
-                        {task.description && (
-                          <p className="text-xs text-muted-foreground truncate line-through">{task.description}</p>
-                        )}
-                        <div className="flex items-center gap-3 mt-1">
-                          {task.dueDate && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <CalendarIcon className="h-3 w-3" />
-                              {formatDate(task.dueDate)}
-                            </div>
-                          )}
-                          {task.assignee && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <User className="h-3 w-3" />
-                              {task.assignee}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={getPriorityColor(task.priority)} className="text-xs">
-                        {task.priority}
-                      </Badge>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteTask(task.id);
-                        }}
-                        className="text-muted-foreground hover:text-destructive transition-colors"
-                        data-testid={`task-delete-${task.id}`}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
+                <TaskWithSubtasks key={task.id} task={task} subtasks={getSubtasks(task.id)} onTaskSelect={onTaskSelect} toggleTaskComplete={toggleTaskComplete} deleteTask={deleteTask} getPriorityColor={getPriorityColor} formatDate={formatDate} />
               ))}
             </div>
           )}

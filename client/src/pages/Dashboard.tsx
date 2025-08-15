@@ -10,7 +10,7 @@ import VoiceModal from "@/components/VoiceModal";
 import { InspectorPane } from "@/components/InspectorPane";
 import { FeatureRequestPanel } from "@/components/FeatureRequestPanel";
 import { DiagnosticsPanel } from "@/components/DiagnosticsPanel";
-import { TaskListView } from "@/components/TaskListView";
+import TaskListView from "@/components/TaskListView";
 import { QuickCaptureButton } from "@/components/QuickCaptureButton";
 import { MobileNavigation } from "@/components/MobileNavigation";
 import { StepRunner } from "@/components/StepRunner";
@@ -84,11 +84,7 @@ export default function Dashboard() {
   } = useWorkflow();
 
   // WebSocket for real-time updates
-  const { isConnected: wsConnected } = useWebSocket((data) => {
-    if (data.type === 'taskUpdate') {
-      queryClient.invalidateQueries({ queryKey: ['/api/projects', currentProjectId, 'tasks'] });
-    }
-  });
+  const { sendMessage, isConnected: wsConnected } = useWebSocket(currentProjectId);
 
   // Fetch AI activity log
   const { data: aiActivityLog = [] } = useQuery({
