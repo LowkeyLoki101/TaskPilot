@@ -17,7 +17,11 @@ import {
   User,
   Clock,
   MessageCircle,
-  Info
+  Info,
+  Bot,
+  CheckCircle,
+  Circle,
+  Zap
 } from "lucide-react";
 import { ChatPane } from "./ChatPane";
 import { AgentDashboard } from "@/components/AgentDashboard";
@@ -73,6 +77,20 @@ export function InspectorPane({
   const task = selectedTask as any;
   const comments = taskComments as any[];
 
+  // Get all tasks and filter for AI-created ones
+  const { data: allTasks = [] } = useQuery({
+    queryKey: ["/api/projects", projectId, "tasks"],
+    refetchInterval: 2000
+  });
+
+  // Filter for AI-generated tasks (those without assignees or recently created by AI)
+  const aiTasks = allTasks.filter((task: any) => 
+    task.assigneeId === null || 
+    task.title === "AI-Generated Task" || 
+    task.description?.includes("AI assistant") ||
+    task.description?.includes("Task created by AI")
+  );
+
   // Helper function to format timestamps
   function formatTimeAgo(timestamp: Date | string): string {
     const now = new Date();
@@ -99,8 +117,8 @@ export function InspectorPane({
               AI
             </TabsTrigger>
             <TabsTrigger value="task" className="text-xs">
-              <FileText className="h-3 w-3 mr-1" />
-              Task
+              <Bot className="h-3 w-3 mr-1" />
+              AI Tasks
             </TabsTrigger>
 
             <TabsTrigger value="diagnostics" className="text-xs">
@@ -185,93 +203,86 @@ export function InspectorPane({
             </div>
           </TabsContent>
 
-          {/* Task tab */}
+          {/* AI Tasks tab */}
           <TabsContent value="task" className="h-full m-0">
-            <ScrollArea className="h-full p-4">
-              {task ? (
-                <div className="space-y-4">
-                  {/* Task Header */}
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm leading-tight">{task.title}</h4>
-                    <p className="text-xs text-muted-foreground">{task.description}</p>
-                    
-                    <div className="flex flex-wrap gap-1">
-                      <Badge variant={task.priority === "high" ? "destructive" : "default"} className="text-xs">
-                        {task.priority}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {task.status}
-                      </Badge>
-                    </div>
+            <div className="h-full flex flex-col">
+              {/* Header */}
+              <div className="p-3 border-b">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">AI-Generated Tasks</span>
                   </div>
+                  <Badge variant="outline" className="text-xs">
+                    {aiTasks.length} active
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Tasks created and managed by the AI assistant
+                </p>
+              </div>
 
-                  {/* Task Meta */}
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-xs">
-                      <User className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-muted-foreground">Assignee:</span>
-                      <span className="font-medium">
-                        {task.assigneeId ? "You" : "Unassigned"}
-                      </span>
+              {/* AI Tasks List */}
+              <ScrollArea className="flex-1">
+                <div className="p-3 space-y-2">
+                  {aiTasks.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No AI tasks yet</p>
+                      <p className="text-xs">AI will create tasks here as it works</p>
                     </div>
-                    
-                    {task.dueDate && (
-                      <div className="flex items-center gap-2 text-xs">
-                        <Calendar className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-muted-foreground">Due:</span>
-                        <span className="font-medium">{new Date(task.dueDate).toLocaleDateString()}</span>
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 text-xs">
-                      <Clock className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-muted-foreground">Created:</span>
-                      <span className="font-medium">{new Date(task.createdAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-
-                  {/* Task Comments */}
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <MessageCircle className="h-3 w-3" />
-                      Comments ({comments.length})
-                    </div>
-                    <div className="space-y-2">
-                      {comments.length > 0 ? comments.map((comment: any) => (
-                        <div key={comment.id} className="bg-muted/50 rounded p-2">
-                          <p className="text-xs">{comment.content}</p>
-                          <p className="text-[10px] text-muted-foreground mt-1">
-                            {new Date(comment.createdAt).toLocaleDateString()}
-                          </p>
+                  ) : (
+                    aiTasks.map((task) => (
+                      <div key={task.id} className="p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium truncate">{task.title}</h4>
+                            <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                              {task.description}
+                            </p>
+                            
+                            <div className="flex items-center gap-2 mt-2">
+                              <Badge 
+                                variant={task.status === 'completed' ? 'default' : task.status === 'in_progress' ? 'secondary' : 'outline'} 
+                                className="text-xs"
+                              >
+                                {task.status === 'todo' ? 'pending' : task.status.replace('_', ' ')}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(task.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-1">
+                            {task.status === 'completed' && (
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            )}
+                            {task.status === 'in_progress' && (
+                              <Clock className="h-4 w-4 text-yellow-500 animate-pulse" />
+                            )}
+                            {task.status === 'todo' && (
+                              <Circle className="h-4 w-4 text-muted-foreground" />
+                            )}
+                          </div>
                         </div>
-                      )) : (
-                        <p className="text-xs text-muted-foreground">No comments yet</p>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Task Metadata */}
-                  {task.metadata && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Info className="h-3 w-3" />
-                        Task Info
                       </div>
-                      <div className="bg-muted/30 rounded p-2">
-                        <pre className="text-[10px] text-muted-foreground font-mono">
-                          {JSON.stringify(task.metadata, null, 2)}
-                        </pre>
-                      </div>
-                    </div>
+                    ))
                   )}
                 </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">Select a task to view details</p>
+              </ScrollArea>
+
+              {/* AI Task Creator */}
+              <div className="p-3 border-t bg-muted/30">
+                <div className="text-xs text-muted-foreground mb-2">
+                  <Zap className="h-3 w-3 inline mr-1" />
+                  Create AI Task
                 </div>
-              )}
-            </ScrollArea>
+                <div className="text-xs text-muted-foreground">
+                  Type "create task: [description]" in chat above to let AI create and manage tasks automatically
+                </div>
+              </div>
+            </div>
           </TabsContent>
 
 
