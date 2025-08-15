@@ -93,7 +93,7 @@ export function InspectorPane({
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="h-full flex flex-col">
         {/* Tabs header is sticky within the inspector scroll area */}
         <div className="sticky top-0 z-10 bg-card/95 backdrop-blur border-b px-3 pt-3 pb-2">
-          <TabsList className="grid grid-cols-4 w-full">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="ai" className="text-xs">
               <Brain className="h-3 w-3 mr-1" />
               AI
@@ -102,10 +102,7 @@ export function InspectorPane({
               <FileText className="h-3 w-3 mr-1" />
               Task
             </TabsTrigger>
-            <TabsTrigger value="feature" className="text-xs">
-              <Lightbulb className="h-3 w-3 mr-1" />
-              Feature
-            </TabsTrigger>
+
             <TabsTrigger value="diagnostics" className="text-xs">
               <Bug className="h-3 w-3 mr-1" />
               Debug
@@ -277,10 +274,7 @@ export function InspectorPane({
             </ScrollArea>
           </TabsContent>
 
-          {/* Feature tab */}
-          <TabsContent value="feature" className="h-full m-0">
-            <FeatureRequestPanel className="h-full" />
-          </TabsContent>
+
 
           {/* Debug tab */}
           <TabsContent value="diagnostics" className="h-full m-0">
