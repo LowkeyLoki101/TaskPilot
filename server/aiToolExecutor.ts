@@ -273,6 +273,93 @@ export class AIToolExecutor {
     
     return "AI Workflow";
   }
+
+  // Smart analysis to determine if AI should create a task for work
+  shouldCreateAITask(userMessage: string): { shouldCreate: boolean; workType?: string } {
+    const lowerMessage = userMessage.toLowerCase().trim();
+    
+    // Patterns that indicate AI should create work tasks
+    const workIndicators = [
+      { pattern: /need.*implement|should.*implement|implement.*feature/i, type: "implementation" },
+      { pattern: /need.*fix|should.*fix|fix.*bug|debug/i, type: "debugging" },
+      { pattern: /need.*research|should.*research|investigate|analyze/i, type: "research" },
+      { pattern: /need.*test|should.*test|test.*functionality/i, type: "testing" },
+      { pattern: /need.*document|should.*document|write.*docs/i, type: "documentation" },
+      { pattern: /need.*optimize|should.*optimize|improve.*performance/i, type: "optimization" }
+    ];
+
+    for (const indicator of workIndicators) {
+      if (indicator.pattern.test(lowerMessage)) {
+        return { shouldCreate: true, workType: indicator.type };
+      }
+    }
+
+    return { shouldCreate: false };
+  }
+
+  // Create AI work task for implied work
+  async createAIWorkTask(userMessage: string, workType: string, context?: any): Promise<ToolExecutionResult> {
+    try {
+      const taskTitle = `AI ${workType.charAt(0).toUpperCase() + workType.slice(1)}: ${this.extractWorkDescription(userMessage)}`;
+      const taskDescription = `AI-created ${workType} task based on user request: "${userMessage}"`;
+      
+      const task = await storage.createTask({
+        title: taskTitle,
+        description: taskDescription,
+        projectId: context?.projectId || 'default-project',
+        status: 'in_progress',
+        priority: 'medium',
+        assigneeId: null,
+        position: { x: Math.random() * 400, y: Math.random() * 300 }
+      });
+      
+      return {
+        success: true,
+        message: `🤖 Created ${workType} task: "${taskTitle}" (AI is working on this)`,
+        data: task,
+        actions: [{
+          type: 'ai_work_task_created',
+          description: `AI started ${workType} work`,
+          result: task
+        }]
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: "Couldn't create AI work task."
+      };
+    }
+  }
+
+  // Generate contextual response for work requests
+  async generateContextualResponse(userMessage: string, context?: any): Promise<string> {
+    // Simple contextual responses based on work type
+    const lowerMessage = userMessage.toLowerCase();
+    
+    if (lowerMessage.includes('implement') || lowerMessage.includes('build')) {
+      return "I'll start implementing this feature. You can track my progress in the AI Tasks section.";
+    }
+    
+    if (lowerMessage.includes('fix') || lowerMessage.includes('debug')) {
+      return "I'm investigating this issue and will work on a fix. Check AI Tasks for updates.";
+    }
+    
+    if (lowerMessage.includes('research') || lowerMessage.includes('analyze')) {
+      return "I'll research this topic and compile findings. Progress will appear in AI Tasks.";
+    }
+    
+    return "I understand your request and will work on it autonomously.";
+  }
+
+  private extractWorkDescription(message: string): string {
+    // Extract meaningful work description from user message
+    const cleanMessage = message
+      .replace(/need to|should|please|can you|could you/gi, '')
+      .replace(/implement|fix|research|test|document|optimize/gi, '')
+      .trim();
+    
+    return cleanMessage.length > 5 ? cleanMessage : "User request";
+  }
 }
 
 export const aiToolExecutor = new AIToolExecutor();

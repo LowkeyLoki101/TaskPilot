@@ -18,7 +18,7 @@ export async function generateAIResponse(userMessage: string, context?: any): Pr
       // Import storage for task creation
       const { storage } = await import('./storage');
       
-      // Try to execute command immediately without asking
+      // Try to execute explicit command immediately without asking
       const executionResult = await aiToolExecutor.executeCommand(userMessage, context);
       
       if (executionResult.success && executionResult.actions && executionResult.actions.length > 0) {
@@ -30,7 +30,16 @@ export async function generateAIResponse(userMessage: string, context?: any): Pr
         return `Executed ${executionResult.actions.length} action${executionResult.actions.length > 1 ? 's' : ''}:\n${actionList}\n\n${executionResult.message || 'Tasks completed successfully.'}`;
       }
       
-      // REMOVED: No automatic task creation - only respond with direct answers
+      // Smart task creation: Analyze if user request implies work that should become an AI task
+      const shouldCreateAITask = aiToolExecutor.shouldCreateAITask(userMessage);
+      if (shouldCreateAITask.shouldCreate) {
+        const aiTaskResult = await aiToolExecutor.createAIWorkTask(userMessage, shouldCreateAITask.workType, context);
+        if (aiTaskResult.success) {
+          // Also provide an answer along with task creation
+          const contextualResponse = await aiToolExecutor.generateContextualResponse(userMessage, context);
+          return `${aiTaskResult.message}\n\n${contextualResponse}`;
+        }
+      }
       
       // If no actions could be executed, check if this is a question/query
       const isQuestion = userMessage.match(/\?|what|how|why|when|where|who|explain|tell me/i);
@@ -39,7 +48,7 @@ export async function generateAIResponse(userMessage: string, context?: any): Pr
         const messages: any[] = [
           {
             role: "system",
-            content: `You are GPT-5 in FULL AUTONOMOUS mode. Answer questions directly and concisely. No small talk or confirmations.`
+            content: `You are GPT-5 in FULL AUTONOMOUS mode for Emergent Intelligence task management platform. Answer questions directly and concisely. Focus on actionable insights.`
           },
           { role: "user", content: userMessage }
         ];
@@ -54,7 +63,7 @@ export async function generateAIResponse(userMessage: string, context?: any): Pr
       }
       
       // Command couldn't be executed - brief error message
-      return `Could not execute: "${userMessage}". Please be more specific (e.g., "create task: Review documentation" or "make tool: Image resizer").`;
+      return `Could not execute: "${userMessage}". Try specific commands like "create task: [description]" or ask questions for guidance.`;
     }
 
     // For semi and manual modes, use the existing conversational approach
